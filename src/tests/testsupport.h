@@ -1,0 +1,6 @@
+#ifndef LINEARALGEBRA_TESTSUPPORT_H
+#define LINEARALGEBRA_TESTSUPPORT_H
+
+#define kTestEPS 1e-10
+
+#endif
