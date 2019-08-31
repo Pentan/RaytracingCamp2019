@@ -10,9 +10,11 @@ set(LINEARALGEBRA_SRCS
     ${PINKYPI_LINEARALGEBRA_DIR}/vector3.h
     ${PINKYPI_LINEARALGEBRA_DIR}/vector4.h
     ${PINKYPI_LINEARALGEBRA_DIR}/matrix4.h
+    ${PINKYPI_LINEARALGEBRA_DIR}/quaternion.h
     ${PINKYPI_LINEARALGEBRA_DIR}/vector3.inl
     ${PINKYPI_LINEARALGEBRA_DIR}/vector4.inl
     ${PINKYPI_LINEARALGEBRA_DIR}/matrix4.inl
+    ${PINKYPI_LINEARALGEBRA_DIR}/quaternion.inl
 )
 add_library(LinearAlgebra INTERFACE)
 # target_include_directories(LinearAlgebra INTERFACE ${PINKYPI_LINEARALGEBRA_DIR})
@@ -27,6 +29,13 @@ list(APPEND PINKIPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/renderer.cc
     ${PINKYPI_CORE_DIR}/renderscheduler.cc
     ${PINKYPI_CORE_DIR}/scene.cc
+    ${PINKYPI_CORE_DIR}/material.cc
+    ${PINKYPI_CORE_DIR}/texture.cc
+    ${PINKYPI_CORE_DIR}/mesh.cc
+    ${PINKYPI_CORE_DIR}/light.cc
+    ${PINKYPI_CORE_DIR}/camera.cc
+    ${PINKYPI_CORE_DIR}/node.cc
+    ${PINKYPI_CORE_DIR}/assetlibrary.cc
 )
 list(APPEND PINKIPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/pptypes.h
@@ -38,6 +47,13 @@ list(APPEND PINKIPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/renderer.h
     ${PINKYPI_CORE_DIR}/renderscheduler.h
     ${PINKYPI_CORE_DIR}/scene.h
+    ${PINKYPI_CORE_DIR}/material.h
+    ${PINKYPI_CORE_DIR}/texture.h
+    ${PINKYPI_CORE_DIR}/mesh.h
+    ${PINKYPI_CORE_DIR}/light.h
+    ${PINKYPI_CORE_DIR}/camera.h
+    ${PINKYPI_CORE_DIR}/node.h
+    ${PINKYPI_CORE_DIR}/assetlibrary.h
 )
 
 add_library(PinkyCore ${PINKIPI_CORE_SRCS})
@@ -50,25 +66,32 @@ target_include_directories(PinkyCore
 # ${PINKYPI_LINEARALGEBRA_DIR}
 
 # Application
-set(PINLYPI_MAIN_SRCS
-    ${PINKYPI_MAIN_DIR}/main.cc
+
+list(APPEND PINLYPI_APP_SRCS
     ${PINKYPI_MAIN_DIR}/sceneloader.cc
 )
-set(PINLYPI_MAIN_HEADERS
+list(APPEND PINLYPI_APP_SRCS
     ${PINKYPI_MAIN_DIR}/sceneloader.h
+)
+add_library(PinkyPiApp ${PINLYPI_APP_SRCS})
+target_include_directories(PinkyPiApp
+    PRIVATE
+    ${PINKYPI_SOURCE_DIR}
+    ${PINKYPI_CORE_DIR}
+    ${PINKYPI_THIRDPARTY_DIR}
 )
 
 # executable settings
-add_executable(Pinkypi
-    ${PINLYPI_MAIN_SRCS}
-    ${PINLYPI_MAIN_HEADERS}
+add_executable(PinkyPi
+    ${PINKYPI_MAIN_DIR}/main.cc
 )
-target_link_libraries(Pinkypi PUBLIC
+target_link_libraries(PinkyPi PUBLIC
+    PinkyPiApp
     PinkyCore
     LinearAlgebra
     ThirdpartyLibs
 )
-target_include_directories(Pinkypi PRIVATE
+target_include_directories(PinkyPi PRIVATE
     ${PINKYPI_SOURCE_DIR}
     ${PINKYPI_THIRDPARTY_DIR}
     ${PINKYPI_MAIN_DIR}

@@ -8,7 +8,7 @@
 using namespace PinkyPi;
 
 namespace {
-    bool IsHitRayAndAABB(const AABB& aabb, Vector3 o, Vector3 d, PPFPType n=1e-2, PPFPType f=1e8) {
+    bool IsHitRayAndAABB(const AABB& aabb, Vector3 o, Vector3 d, PPFloat n=1e-2, PPFloat f=1e8) {
         return aabb.isIntersect(Ray(o, Vector3::normalized(d)), n, f);
     }
 }

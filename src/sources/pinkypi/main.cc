@@ -14,12 +14,13 @@ int main(int argc, char* argv[])
     
     std::string configPath = "datas/config.json";
     PinkyPi::Config config;
-    config.load(configPath);
+    if(!config.load(configPath)) {
+        std::cerr << "config load failed. use default settings." << std::endl;
+    }
     
     PinkyPi::Scene *scene = nullptr;
-    PinkyPi::SceneLoader loader;
-    if(loader.load(config.inputFile)) {
-        scene = loader.build();
+    if(config.inputFile.length() > 0) {
+        scene = PinkyPi::SceneLoader::load(config.inputFile);;
     } else {
         scene = PinkyPi::Scene::buildDefaultScene();
     }
@@ -28,6 +29,8 @@ int main(int argc, char* argv[])
         std::cerr << "scene is nullptr" << std::endl;
         return 0;
     }
+    
+    scene->buildForTrace();
     
     PinkyPi::Renderer renderer(config);
     renderer.render(scene);

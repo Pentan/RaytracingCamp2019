@@ -28,7 +28,7 @@ namespace PinkyPi {
             return ret;
         }
         
-        Vector3 pointAt(PPFPType t) const {
+        Vector3 pointAt(PPFloat t) const {
             return direction * t + origin;
         }
     };

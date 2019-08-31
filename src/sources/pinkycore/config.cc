@@ -8,12 +8,17 @@
 using namespace PinkyPi;
 
 bool Config::load(const std::string& path) {
-    std::fstream fs(path);
+    std::ifstream fs(path);
+    if(!fs.is_open()) {
+        std::cerr << "config file couldn't open:" << path << std::endl;
+        return false;
+    }
+    
     nlohmann::json jsonRoot;
     fs >> jsonRoot;
     
     if(!jsonRoot.is_object()) {
-        fprintf(stderr, "json %s format error\n", path.c_str());
+        std::cerr << "json format error:" << path << std::endl;
         return false;
     }
     

@@ -7,10 +7,7 @@ namespace PinkyPi {
     
     class SceneLoader {
     public:
-        SceneLoader();
-
-        bool load(std::string filepath);
-        Scene* build();
+        static Scene* load(std::string filepath);
     };
 }
 

@@ -31,21 +31,21 @@ namespace PinkyPi {
 
     public:
         Config():
-        width(320),
-        height(270),
-        samplesPerPixel(4),
-        pixelSubSamples(2),
-        minDepth(1),
-        maxDepth(4),
-        minRussianRouletteCutOff(0.005),
-        tileSize(64),
-        scrambleTile(true),
-        limitSec(60.0),
-        progressIntervalSec(-1.0),
-        quietProgress(false),
-        waitUntilFinish(true),
-        inputFile(""),
-        outputFile("output.png")
+            width(320),
+            height(270),
+            samplesPerPixel(4),
+            pixelSubSamples(2),
+            minDepth(1),
+            maxDepth(4),
+            minRussianRouletteCutOff(0.005),
+            tileSize(64),
+            scrambleTile(true),
+            limitSec(60.0),
+            progressIntervalSec(-1.0),
+            quietProgress(false),
+            waitUntilFinish(true),
+            inputFile(""),
+            outputFile("output.png")
         {
         }
         

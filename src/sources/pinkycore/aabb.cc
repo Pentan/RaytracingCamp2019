@@ -6,11 +6,11 @@
 using namespace PinkyPi;
 
 AABB::AABB():
-	min(std::numeric_limits<PPFPType>::max()),
-	max(-std::numeric_limits<PPFPType>::max())
+	min(std::numeric_limits<PPFloat>::max()),
+	max(-std::numeric_limits<PPFloat>::max())
 {}
 
-AABB::AABB(const PPFPType minval, const PPFPType maxval)
+AABB::AABB(const PPFloat minval, const PPFloat maxval)
 {
 	if(minval < maxval) {
 		min = Vector3(minval);
@@ -35,8 +35,8 @@ AABB::AABB(const Vector3 minvec, const Vector3 maxvec)
 }
 
 void AABB::clear() {
-	min = Vector3(std::numeric_limits<PPFPType>::max());
-	max = Vector3(-std::numeric_limits<PPFPType>::max());
+	min = Vector3(std::numeric_limits<PPFloat>::max());
+	max = Vector3(-std::numeric_limits<PPFloat>::max());
 }
 
 Vector3 AABB::size() const {
@@ -72,14 +72,14 @@ bool AABB::isInside(const Vector3 &p) const {
 			(p.x < max.x && p.y < max.y && p.z < max.z) );
 }
 
-bool AABB::isIntersect(const Ray &ray, PPFPType tnear, PPFPType tfar) const {
-	PPFPType largest_min = tnear;
-    PPFPType smallest_max = tfar;
+bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
+	PPFloat largest_min = tnear;
+    PPFloat smallest_max = tfar;
 	
 	for(int i = 0; i < 3; i++) {
-		PPFPType vdiv = 1.0 / ray.direction.v[i];
-		PPFPType tmpmin = (min.v[i] - ray.origin.v[i]) * vdiv;
-		PPFPType tmpmax = (max.v[i] - ray.origin.v[i]) * vdiv;
+		PPFloat vdiv = 1.0 / ray.direction.v[i];
+		PPFloat tmpmin = (min.v[i] - ray.origin.v[i]) * vdiv;
+		PPFloat tmpmax = (max.v[i] - ray.origin.v[i]) * vdiv;
         if(vdiv < 0.0) {
             std::swap(tmpmin, tmpmax);
         }
