@@ -4,3 +4,5 @@
 
 src/tests/output
 src/tests/testdata
+
+.DS_Store
