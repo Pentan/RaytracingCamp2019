@@ -110,7 +110,7 @@ void Mesh::preprocess() {
 
 PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const
 {
-    if(!bounds.isIntersect(ray, nearhit, farhit)) {
+    if(bounds.isIntersect(ray, nearhit, farhit)) {
         return -1.0;
     }
     

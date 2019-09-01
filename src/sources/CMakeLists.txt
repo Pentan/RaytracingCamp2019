@@ -164,8 +164,6 @@ list(APPEND RRT_CORE_SRCS
     ${RRT_CORE_DIR}/bsdfs/translucent.h
 )
 list(APPEND RRT_CORE_SRCS
-    ${RRT_CORE_DIR}/geometries/aabbgeometry.cc
-    ${RRT_CORE_DIR}/geometries/aabbgeometry.h
     ${RRT_CORE_DIR}/geometries/geometry.h
     ${RRT_CORE_DIR}/geometries/geometry_include.h
     ${RRT_CORE_DIR}/geometries/mesh.cc
@@ -173,6 +171,8 @@ list(APPEND RRT_CORE_SRCS
     ${RRT_CORE_DIR}/geometries/sphere.cc
     ${RRT_CORE_DIR}/geometries/sphere.h
 )
+# ${RRT_CORE_DIR}/geometries/aabbgeometry.cc
+# ${RRT_CORE_DIR}/geometries/aabbgeometry.h
 list(APPEND RRT_CORE_SRCS
     ${RRT_CORE_DIR}/materials/fineglass.cpp
     ${RRT_CORE_DIR}/materials/fineglass.h

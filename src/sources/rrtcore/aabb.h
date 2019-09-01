@@ -1,4 +1,4 @@
-﻿#ifndef R1H_AABB_H
+#ifndef R1H_AABB_H
 #define R1H_AABB_H
 
 #include <cfloat>
@@ -27,7 +27,8 @@ public:
     void updateCentroid();
 	
     bool isInside(const Vector3 &p) const;
-    bool isIntersect(const Ray &ray, R1hFPType *outmin=0, int *outaxis=0) const;
+//    bool isIntersect(const Ray &ray, R1hFPType *outmin=0, int *outaxis=0) const;
+    bool isIntersect(const Ray &ray, R1hFPType *outmin=nullptr) const;
 };
 
 }

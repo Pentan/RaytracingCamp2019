@@ -72,7 +72,13 @@ bool AABB::isInside(const Vector3 &p) const {
 			(p.x < max.x && p.y < max.y && p.z < max.z) );
 }
 
-bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
+bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const
+{
+    PPFloat t = intersection(ray, tnear, tfar);
+    return t > 0.0;
+}
+
+PPFloat AABB::intersection(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
 	PPFloat largest_min = tnear;
     PPFloat smallest_max = tfar;
 	
@@ -88,9 +94,9 @@ bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
         smallest_max = std::min(smallest_max, tmpmax);
         
 		if(smallest_max < largest_min) {
-			return false;
+			return -1.0;
 		}
 	}
 	
-	return true;
+    return (largest_min > 0.0)? largest_min : smallest_max;
 }

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <catch2/catch.hpp>
 #include "../testsupport.h"
 
@@ -9,7 +10,20 @@ using namespace PinkyPi;
 
 namespace {
     bool IsHitRayAndAABB(const AABB& aabb, Vector3 o, Vector3 d, PPFloat n=1e-2, PPFloat f=1e8) {
+#if 1
         return aabb.isIntersect(Ray(o, Vector3::normalized(d)), n, f);
+#else
+        PPFloat t = aabb.intersection(Ray(o, Vector3::normalized(d)), n, f);
+        std::cerr << "AABB:((" << aabb.min.x << "," << aabb.min.y << "," << aabb.min.z << ")";
+        std::cerr << ",(" << aabb.max.x << "," << aabb.max.y << "," << aabb.max.z << "))";
+        std::cerr << std::endl;
+        std::cerr << "Ray((" << o.x << "," << o.y << "," << o.z << ")";
+        std::cerr << ",(" << d.x << "," << d.y << "," << d.z << "))";
+        std::cerr << std::endl;
+        std::cerr << "result(" << t << ")";
+        std::cerr << std::endl;
+        return t > 0.0;
+#endif
     }
 }
 
@@ -51,7 +65,7 @@ TEST_CASE("AABB basic test", "[AABB]") {
     }
 }
 
-TEST_CASE("AABB intersect") {
+TEST_CASE("AABB intersect", "[AABB]") {
     AABB aabb(Vector3(-1.0), Vector3(1.0));
     
     REQUIRE( IsHitRayAndAABB(aabb, Vector3(0.0, 0.0, 5.0), Vector3(0.0, 0.0, -1.0)) );

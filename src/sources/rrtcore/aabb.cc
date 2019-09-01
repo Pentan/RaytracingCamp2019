@@ -1,4 +1,4 @@
-﻿
+
 
 #include <algorithm>
 #include "aabb.h"
@@ -75,69 +75,96 @@ bool AABB::isInside(const Vector3 &p) const {
 			(p.x < max.x && p.y < max.y && p.z < max.z) );
 }
 
-bool AABB::isIntersect(const Ray &ray, R1hFPType *outmin, int *outaxis) const {
-	R1hFPType tmin, tmax;
-	R1hFPType tmpmin, tmpmax;
-	int minaxis = 0;
-	
-	tmin = -DBL_MAX;
-	tmax = DBL_MAX;
-	
-	for(int i = 0; i < 3; i++) {
-		
-		//std::cout << "check for component [" << i << "]" << std::endl;
-		//std::cout << " ray.dir_[" << i << "]:" << ray.dir_.v[i] << std::endl;
-		if(fabs(ray.direction.v[i]) < kEPS) {
-			//std::cout << " parallel ray. skip:" << i << " (" << ray.dir_.v[i] << ")" << std::endl;
-			continue;
-		}
-		R1hFPType vdiv = 1.0 / ray.direction.v[i];
-		//std::cout << " vdiv:" << vdiv << std::endl;
-		/*
-		if(ray.org_.v[i] > min.v[i] && ray.org_.v[i] < max.v[i]) {
-			std::cout << " !!!origin component[" << i << "] " << ray.org_.v[i]  << " is inside a range (" << min.v[i] << "," << max.v[i] << ")" << std::endl;
-		}
-		*/
-		if(ray.direction.v[i] >= 0.0) {
-			tmpmin = (min.v[i] - ray.origin.v[i]) * vdiv;
-			tmpmax = (max.v[i] - ray.origin.v[i]) * vdiv;
-		} else {
-			tmpmax = (min.v[i] - ray.origin.v[i]) * vdiv;
-			tmpmin = (max.v[i] - ray.origin.v[i]) * vdiv;
-		}
-		
-		// reduction width
-		if(tmpmin > tmin) {
-			tmin = tmpmin;
-			minaxis = i;
-		}
-		if(tmpmax < tmax) {
-			tmax = tmpmax;
-		}
-		
-		//std::cout << " tmp[" << i << "]:" << tmpmin << "," << tmpmax << std::endl;
-		//std::cout << " t[" << i << "]:" << tmin << "," << tmax << std::endl;
-		
-		// not hit
-		if(tmax < tmin) {
-			//std::cout << "### not hit:" << tmin << "," << tmax << std::endl;
-			return false;
-		}
-	}
-		
-	// behind the ray
-	if(tmax < 0.0 && tmin < 0.0) {
-		//std::cout << "### intersected but behind." << std::endl;
-		return false;
-	}
-	
-	// output
-	if(outmin) {
-		*outmin = tmin;
-	}
-	if(outaxis) {
-		*outaxis = minaxis;
-	}
-	
-	return true;
+bool AABB::isIntersect(const Ray &ray, R1hFPType *outmin) const {
+    R1hFPType tmin, tmax;
+    R1hFPType tmpmin, tmpmax;
+    int minaxis = 0;
+
+    tmin = -DBL_MAX;
+    tmax = DBL_MAX;
+
+    for(int i = 0; i < 3; i++) {
+
+        //std::cout << "check for component [" << i << "]" << std::endl;
+        //std::cout << " ray.dir_[" << i << "]:" << ray.dir_.v[i] << std::endl;
+        if(fabs(ray.direction.v[i]) < kEPS) {
+            //std::cout << " parallel ray. skip:" << i << " (" << ray.dir_.v[i] << ")" << std::endl;
+            continue;
+        }
+        R1hFPType vdiv = 1.0 / ray.direction.v[i];
+        //std::cout << " vdiv:" << vdiv << std::endl;
+        /*
+        if(ray.org_.v[i] > min.v[i] && ray.org_.v[i] < max.v[i]) {
+            std::cout << " !!!origin component[" << i << "] " << ray.org_.v[i]  << " is inside a range (" << min.v[i] << "," << max.v[i] << ")" << std::endl;
+        }
+        */
+        if(ray.direction.v[i] >= 0.0) {
+            tmpmin = (min.v[i] - ray.origin.v[i]) * vdiv;
+            tmpmax = (max.v[i] - ray.origin.v[i]) * vdiv;
+        } else {
+            tmpmax = (min.v[i] - ray.origin.v[i]) * vdiv;
+            tmpmin = (max.v[i] - ray.origin.v[i]) * vdiv;
+        }
+
+        // reduction width
+        if(tmpmin > tmin) {
+            tmin = tmpmin;
+            minaxis = i;
+        }
+        if(tmpmax < tmax) {
+            tmax = tmpmax;
+        }
+
+        //std::cout << " tmp[" << i << "]:" << tmpmin << "," << tmpmax << std::endl;
+        //std::cout << " t[" << i << "]:" << tmin << "," << tmax << std::endl;
+
+        // not hit
+        if(tmax < tmin) {
+            //std::cout << "### not hit:" << tmin << "," << tmax << std::endl;
+            return false;
+        }
+    }
+
+    // behind the ray
+    if(tmax < 0.0 && tmin < 0.0) {
+        //std::cout << "### intersected but behind." << std::endl;
+        return false;
+    }
+
+    // output
+    if(outmin) {
+        *outmin = tmin;
+    }
+//    if(outaxis) {
+//        *outaxis = minaxis;
+//    }
+
+    return true;
 }
+
+//bool AABB::isIntersect(const Ray &ray, R1hFPType *outmin) const {
+//    R1hFPType largest_min = DBL_MAX;
+//    R1hFPType smallest_max = -DBL_MAX;
+//
+//    for(int i = 0; i < 3; i++) {
+//        R1hFPType vdiv = 1.0 / ray.direction.v[i];
+//        R1hFPType tmpmin = (min.v[i] - ray.origin.v[i]) * vdiv;
+//        R1hFPType tmpmax = (max.v[i] - ray.origin.v[i]) * vdiv;
+//        if(vdiv < 0.0) {
+//            std::swap(tmpmin, tmpmax);
+//        }
+//
+//        largest_min = std::max(largest_min, tmpmin);
+//        smallest_max = std::min(smallest_max, tmpmax);
+//
+//        if(smallest_max < largest_min) {
+//            return false;
+//        }
+//    }
+//
+//    if(outmin != nullptr) {
+//        *outmin = (largest_min > 0.0)? largest_min : smallest_max;
+//    }
+//
+//    return true;
+//}
