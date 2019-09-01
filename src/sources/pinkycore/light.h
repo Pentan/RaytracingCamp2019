@@ -35,6 +35,11 @@ namespace PinkyPi {
                 outerConeAngle(outer)
             {}
         } spot;
+        
+        
+        Matrix4 globalTransform;
+        Matrix4 invGlobalTransform;
+        void setGlobalTransform(const Matrix4 &m);
     };
 }
 

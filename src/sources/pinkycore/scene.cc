@@ -38,12 +38,15 @@ void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
     
     switch (node->contentType) {
         case Node::kContentTypeMesh:
+            node->mesh->setGlobalTransform(gm);
             meshes.push_back(node->mesh);
             break;
         case Node::kContentTypeCamera:
+            node->camera->setGlobalTransform(gm);
             cameras.push_back(node->camera);
             break;
         case Node::kContentTypeLight:
+            node->light->setGlobalTransform(gm);
             lights.push_back(node->light);
             break;
         default:

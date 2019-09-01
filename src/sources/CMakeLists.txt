@@ -218,16 +218,21 @@ target_include_directories(RrTCore
 
 add_executable(PinkyWithRrT
     ${PWR_MAIN_DIR}/main.cc
+    ${PWR_MAIN_DIR}/sceneconverter.cc
+    ${PWR_MAIN_DIR}/sceneconverter.h
 )
 target_link_libraries(PinkyWithRrT
     PUBLIC
     RrTCore
+    PinkyPiApp
+    PinkyCore
+    LinearAlgebra
     ThirdpartyLibs
 )
 target_include_directories(PinkyWithRrT
     PRIVATE
     ${RRT_CORE_DIR}
+    ${PINKYPI_SOURCE_DIR}
+    ${PINKYPI_MAIN_DIR}
     ${PINKYPI_THIRDPARTY_DIR}
 )
-# ${PINKYPI_SOURCE_DIR}
-# ${PINKYPI_MAIN_DIR}

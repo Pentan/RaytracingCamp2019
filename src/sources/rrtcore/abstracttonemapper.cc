@@ -2,6 +2,9 @@
 #include "abstracttonemapper.h"
 #include <iostream>
 #include <cstdio>
+#include <vector>
+
+#include <stb/stb_image_write.h>
 
 #include "framebuffer.h"
 
@@ -168,3 +171,30 @@ void AbstractToneMapper::exportTGA(const FrameBuffer *frmbuf, const std::string 
     /////
     //std::cerr << outpath << " saved" << std::endl;
 }
+
+void AbstractToneMapper::exportPNG(const FrameBuffer *frmbuf, const std::string outpath) {
+    int width = frmbuf->getWidth();
+    int height =frmbuf->getHeight();
+    std::vector<unsigned char> buffer(width * height * 3);
+    
+    int rgb[4];
+    for(int y = 0; y < height; y++) {
+        for(int x = 0; x < width; x++) {
+            const Color &srccol = frmbuf->getColorAt(x, y);
+            const Color outcol = tonemap(srccol);
+            packColor(rgb, outcol);
+            
+            int i = (x + (height - y - 1) * width) * 3;
+            buffer[i + 0] = rgb[0];
+            buffer[i + 1] = rgb[1];
+            buffer[i + 2] = rgb[2];
+            //buffer[i + 3] = 0xff;
+        }
+    }
+    
+    int res = stbi_write_png(outpath.c_str(), width, height, 3, buffer.data(), 0);
+    if(res == 0) {
+        std::cerr << "stbi_write_png failed:" << outpath << std::endl;
+    }
+}
+

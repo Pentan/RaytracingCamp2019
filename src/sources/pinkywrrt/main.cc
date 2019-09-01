@@ -15,6 +15,8 @@
 #include "tonemapper.h"
 //#include "xmlscene.h"
 
+#include <pinkycore/config.h>
+
 //
 #include "eduptscene.h"
 //
@@ -49,6 +51,26 @@ int main(int argc, char *argv[]) {
 
     // renderer setup
     Renderer *render = new Renderer();
+    
+    std::string configPath = "datas/config.json";
+    PinkyPi::Config ppconfig;
+    if(!ppconfig.load(configPath)) {
+        std::cerr << "config load failed. use default settings." << std::endl;
+    }
+    
+    {
+        Renderer::Config conf = render->getConfig();
+        conf.width = ppconfig.width;
+        conf.height = ppconfig.height;
+        conf.samples = ppconfig.samplesPerPixel;
+        conf.subSamples = ppconfig.pixelSubSamples;
+        conf.minDepth = ppconfig.minDepth;
+        conf.maxDepth = ppconfig.maxDepth;
+        conf.tileSize = ppconfig.tileSize;
+        conf.outputFile = ppconfig.outputFile;
+        
+        render->setConfig(conf);
+    }
 
     // scene setup
     Scene *scene = new Scene();
@@ -56,11 +78,7 @@ int main(int argc, char *argv[]) {
 	
 //    if(argc > 1)
     {
-        Renderer::Config conf = render->getConfig();
-        conf.width = 256;
-        conf.height = 256;
-        conf.samples = 4;
-        render->setConfig(conf);
+        const Renderer::Config& conf = render->getConfig();
         loaded = EduptScene::load(scene, double(conf.width) / conf.height);
         loaded = true;
     }
@@ -133,7 +151,8 @@ int main(int argc, char *argv[]) {
 		// final image
 		Renderer::Config renderConf = render->getConfig();
 		const char *finalname = renderConf.outputFile.c_str();//"final.bmp";
-		mapper->exportBMP(render->getFrameBuffer(), finalname);
+		//mapper->exportBMP(render->getFrameBuffer(), finalname);
+        mapper->exportPNG(render->getFrameBuffer(), finalname);
         printf("%s saved\n", finalname);
 
 		printf("saved [%.4f sec]\n", gettimeofday_sec() - startTime);

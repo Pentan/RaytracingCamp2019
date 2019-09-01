@@ -21,3 +21,8 @@ Light::Light():
 Light::~Light() {
     
 }
+
+void Light::setGlobalTransform(const Matrix4 &m) {
+    globalTransform = m;
+    invGlobalTransform = Matrix4::inverted(m, nullptr);
+}

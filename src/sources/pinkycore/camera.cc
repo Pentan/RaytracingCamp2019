@@ -1,10 +1,3 @@
-//
-//  camera.cpp
-//  PinkyCore
-//
-//  Created by SatoruNAKAJIMA on 2019/08/16.
-//
-
 #include "camera.h"
 
 #include "pptypes.h"
@@ -37,4 +30,9 @@ void Camera::initWithType(CameraType t)
             orthographics.zfar = 1e8;
             break;
     }
+}
+
+void Camera::setGlobalTransform(const Matrix4 &m) {
+    globalTransform = m;
+    invGlobalTransform = Matrix4::inverted(m, nullptr);
 }

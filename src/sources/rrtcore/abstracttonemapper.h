@@ -20,6 +20,7 @@ public:
     
     void exportBMP(const FrameBuffer *frmbuf, const std::string outpath);
     void exportTGA(const FrameBuffer *frmbuf, const std::string outpath);
+    void exportPNG(const FrameBuffer *frmbuf, const std::string outpath);
     
 protected:
     double gamma;

@@ -48,6 +48,10 @@ namespace PinkyPi {
         PPFloat focalLength;
         PPFloat fNumber;
         PPFloat focusDistance;
+        
+        Matrix4 globalTransform;
+        Matrix4 invGlobalTransform;
+        void setGlobalTransform(const Matrix4& m);
     };
 }
 
