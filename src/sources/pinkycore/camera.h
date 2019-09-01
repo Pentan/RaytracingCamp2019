@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "pptypes.h"
+#include "ray.h"
 
 namespace PinkyPi {
     
@@ -20,6 +21,9 @@ namespace PinkyPi {
         ~Camera();
         
         void initWithType(CameraType t);
+        
+        // tx and ty range is (-1,1)
+        Ray getRay(PPFloat tx, PPFloat ty);
         
         //
         std::string name;

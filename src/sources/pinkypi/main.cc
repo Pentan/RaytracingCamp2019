@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include <pinkycore/assetlibrary.h>
 #include <pinkycore/scene.h>
 #include <pinkycore/renderer.h>
 #include <pinkycore/config.h>
@@ -18,11 +19,15 @@ int main(int argc, char* argv[])
         std::cerr << "config load failed. use default settings." << std::endl;
     }
     
+    
+    PinkyPi::AssetLibrary *assetlib = nullptr;
     PinkyPi::Scene *scene = nullptr;
+    
     if(config.inputFile.length() > 0) {
-        scene = PinkyPi::SceneLoader::load(config.inputFile);;
+        assetlib = PinkyPi::SceneLoader::load(config.inputFile);
+        scene = assetlib->getDefaultScene();
     } else {
-        scene = PinkyPi::Scene::buildDefaultScene();
+//        scene = PinkyPi::Scene::buildDefaultScene();
     }
     
     if(scene == nullptr) {
@@ -30,7 +35,7 @@ int main(int argc, char* argv[])
         return 0;
     }
     
-    scene->buildForTrace();
+    scene->buildForTrace(assetlib);
     
     PinkyPi::Renderer renderer(config);
     renderer.render(scene);

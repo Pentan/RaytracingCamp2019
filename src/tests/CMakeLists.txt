@@ -26,10 +26,11 @@ set(PINKYCORE_TEST_DIR coreTests)
 set(PINKYCORE_TESTS_SRCS 
     ${PINKYCORE_TEST_DIR}/aabbTests.cc
     ${PINKYCORE_TEST_DIR}/framebufferTests.cc
+    ${PINKYCORE_TEST_DIR}/randomTests.cc
 )
 source_group(coreTests FILES ${PINKYCORE_TESTS_SRCS})
 
-# Core
+# App
 set(PINKYAPP_TEST_DIR appTests)
 set(PINKYAPP_TESTS_SRCS 
     ${PINKYAPP_TEST_DIR}/sceneloaderTests.cc

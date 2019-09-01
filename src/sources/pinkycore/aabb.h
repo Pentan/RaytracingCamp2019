@@ -11,6 +11,7 @@ namespace PinkyPi {
         Vector3 min;
         Vector3 max;
         int dataId;
+        int subDataId;
         
         AABB();
         AABB(const PPFloat minval, const PPFloat maxval);

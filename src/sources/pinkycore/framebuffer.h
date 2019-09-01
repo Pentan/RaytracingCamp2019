@@ -48,7 +48,7 @@ namespace PinkyPi {
             int height;
             
             // tx:[startx, endx), ty:[starty, endy)
-            int getBufferOffset(int tx, int ty) const {
+            int getPixelIndex(int tx, int ty) const {
                 return bufferStart + (tx - startx) + (ty - starty) * width;
             }
         };
@@ -62,9 +62,12 @@ namespace PinkyPi {
         // buffer offset
         void accumulate(int i, const Color& col);
         Color getColor(int i) const;
+        Pixel& getPixel(int i) const;
+        
         // position
         void accumulate(int x, int y, const Color& col);
         Color getColor(int x, int y) const;
+        Pixel& getPixel(int x, int y) const;
         
         int getWidth() const { return width; }
         int getHeight() const { return height; }

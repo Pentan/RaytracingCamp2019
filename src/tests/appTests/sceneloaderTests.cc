@@ -22,7 +22,8 @@ TEST_CASE("Scene loader test", "[SceneLoader]") {
     ss <<  PINKYPI_TEST_DATA_DIR << basedir << filename;
     std::string gltfpath = ss.str();
     
-    Scene *scene = SceneLoader::load(gltfpath);
+    AssetLibrary *assetlib = SceneLoader::load(gltfpath);
+    Scene *scene = assetlib->getDefaultScene();
     
     REQUIRE(scene != nullptr);
 }

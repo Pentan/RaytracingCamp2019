@@ -92,7 +92,7 @@ TEST_CASE("FrameBuffer basic test", "[FrameBuffer]") {
             PPFloat fy = (PPFloat)(iy - tile.starty) / (tile.height - 1.0);
             for(int ix = tile.startx; ix < tile.endx; ix++) {
                 PPFloat fx = (PPFloat)(ix - tile.startx) / (tile.width - 1.0);
-                int ib = tile.getBufferOffset(ix, iy);
+                int ib = tile.getPixelIndex(ix, iy);
                 fb.accumulate(ib, Color(fx, fy, ft));
                 //fb.accumulate(ix, iy, Color(fx, fy, ft));
             }

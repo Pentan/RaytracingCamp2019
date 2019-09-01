@@ -473,6 +473,9 @@ namespace {
             auto mesh = new Mesh();
             mesh->clusters.reserve(gltfprims.size());
             
+            int primCount = 0;
+            int totalVerts = 0;
+            int totalTris = 0;
             for(auto prmite = gltfprims.begin(); prmite != gltfprims.end(); ++prmite) {
                 auto gltfprimitive = *prmite;
                 
@@ -560,6 +563,7 @@ namespace {
                     tri.a = indba.readInt();
                     tri.b = indba.readInt();
                     tri.c = indba.readInt();
+                    tri.clusterId = primCount;
                 }
                 
                 // Material
@@ -571,7 +575,13 @@ namespace {
                 if(cluster->material->emissiveFactor.getMaxComponent() > 0.0) {
                     mesh->emissiveClusters.push_back(sptr);
                 }
+                
+                primCount += 1;
+                totalVerts += numverts;
+                totalTris += numtris;
             }
+            mesh->totalVertices = totalVerts;
+            mesh->totalTriangles = totalTris;
             
             // Add
             assetlib->meshes.push_back(std::shared_ptr<Mesh>(mesh));
@@ -880,7 +890,7 @@ namespace {
     }
 }
 
-Scene* SceneLoader::load(std::string filepath) {
+AssetLibrary* SceneLoader::load(std::string filepath) {
     tinygltf::TinyGLTF gltfloader;
     
     tinygltf::Model model;
@@ -907,5 +917,5 @@ Scene* SceneLoader::load(std::string filepath) {
     
     assetLib->defaultSceneId = model.defaultScene;
     
-    return assetLib->getDefaultScene();
+    return assetLib;
 }

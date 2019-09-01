@@ -11,6 +11,8 @@ namespace PinkyPi {
     const PPFloat kPI = 3.14159265358979323846;
     const PPFloat kINF = 1e128;
     const PPFloat kEPS = 1e-8;
+    const PPFloat kRayOffset = 1e-4;
+    const PPFloat kFarAway = 1e16;
     #define kSmallOffset    kEPS
 
     typedef linearalgebra::Vector3<PPFloat> Vector3;

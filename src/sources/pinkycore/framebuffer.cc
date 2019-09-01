@@ -59,9 +59,18 @@ Color FrameBuffer::getColor(int  i) const {
     return buffer[i].getColor();
 }
 
+FrameBuffer::Pixel& FrameBuffer::getPixel(int  i) const {
+    return buffer[i];
+}
+
 Color FrameBuffer::getColor(int x, int y) const {
     int i = positionToBufferIndex(x, y);
     return getColor(i);
+}
+
+FrameBuffer::Pixel& FrameBuffer::getPixel(int x, int y) const {
+    int i = positionToBufferIndex(x, y);
+    return buffer[i];
 }
 
 int FrameBuffer::positionToBufferIndex(int x, int y) const {

@@ -3,11 +3,11 @@
 
 namespace PinkyPi {
     
-    class Scene;
+    class AssetLibrary;
     
     class SceneLoader {
     public:
-        static Scene* load(std::string filepath);
+        static AssetLibrary* load(std::string filepath);
     };
 }
 
