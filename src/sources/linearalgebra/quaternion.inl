@@ -37,17 +37,17 @@ namespace linearalgebra {
         Matrix4<FPType> m;
         
         m.m00 = x * x - y * y - z * z + w * w;
-        m.m01 = 2.0 * (x * y - z * w);
-        m.m02 = 2.0 * (x * z + y * w);
+        m.m01 = 2.0 * (x * y + z * w);
+        m.m02 = 2.0 * (x * z - y * w);
         m.m03 = 0.0;
         
-        m.m10 = 2.0 * (x * y + z * w);
+        m.m10 = 2.0 * (x * y - z * w);
         m.m11 = -x * x + y * y - z * z + w * w;
-        m.m12 = 2.0 * (y * z - x * w);
+        m.m12 = 2.0 * (y * z + x * w);
         m.m13 = 0.0;
         
-        m.m20 = 2.0 * (x * z - y * w);
-        m.m21 = 2.0 * (y * z + x * w);
+        m.m20 = 2.0 * (x * z + y * w);
+        m.m21 = 2.0 * (y * z - x * w);
         m.m22 = -x * x - y * y + z * z + w * w;
         m.m23 = 0.0;
         

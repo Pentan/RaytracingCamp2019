@@ -1,4 +1,4 @@
-﻿
+
 #include <iostream>
 #include <cmath>
 #include "camera.h"
@@ -38,6 +38,7 @@ void Camera::setLookat(const Vector3 &eye, const Vector3 &look, const Vector3 &n
 	 */
 }
 void Camera::setTransform(const Matrix4& transmat) {
+    transform = transmat;
 	invTransform = Matrix4::inverted(transmat, nullptr);
 }
 /*
@@ -83,6 +84,10 @@ void Camera::setSensorWidthWithAspect(const R1hFPType w, const R1hFPType aspect)
 	sensorHeight = w / aspect;
 }
 
+void Camera::setFocalLengthFromFOV(R1hFPType fov) {
+    focalLength = sensorHeight * 0.5 / tan(fov * 0.5);
+}
+
 R1hFPType Camera::getSensorAspectRatio() const {
 	return sensorWidth / sensorHeight;
 }
@@ -114,9 +119,11 @@ Ray Camera::getRay(const double tx, const double ty, Random *rnd) const {
 		dir = Vector3::normalized(ip);
 	}
 	
-	eyep = Matrix4::transformV3(invTransform, eyep);
-	dir = Matrix4::mulV3(invTransform, dir);
-	
+//    eyep = Matrix4::transformV3(invTransform, eyep);
+//    dir = Matrix4::mulV3(invTransform, dir);
+    eyep = Matrix4::transformV3(transform, eyep);
+    dir = Matrix4::mulV3(transform, dir);
+
 	/*
 	Vector3 left = side * (screenLeft * tx * 0.5);
     Vector3 top = up * (screenLeft / aspect * ty * 0.5);

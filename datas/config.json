@@ -1,6 +1,9 @@
 {
-    "width":320,
-    "height":180,
-    
+    "width":256,
+    "height":256,
+
+    "scrambleTile":false,
+
+    "inputFile":"local_datas/Blender/test01.gltf",
     "end":0
 }

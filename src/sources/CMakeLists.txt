@@ -181,6 +181,8 @@ list(APPEND RRT_CORE_SRCS
     ${RRT_CORE_DIR}/materials/material.cpp
     ${RRT_CORE_DIR}/materials/material.h
     ${RRT_CORE_DIR}/materials/material_include.h
+    ${RRT_CORE_DIR}/materials/pbrrmmaterial.cpp
+    ${RRT_CORE_DIR}/materials/pbrrmmaterial.h
     ${RRT_CORE_DIR}/materials/singlebsdfmaterial.cpp
     ${RRT_CORE_DIR}/materials/singlebsdfmaterial.h
     ${RRT_CORE_DIR}/materials/skymaterial.cc

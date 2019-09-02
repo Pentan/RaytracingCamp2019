@@ -4,7 +4,8 @@
 #include <string>
 
 #include <rrtcore/scene.h>
+#include <pinkycore/config.h>
 
-bool LoadAndConvertPinkyPiScene(std::string path, r1h::Scene *rrtscene);
+bool LoadAndConvertPinkyPiScene(const std::string& path, const PinkyPi::Config *ppconf, r1h::Scene *rrtscene);
 
 #endif

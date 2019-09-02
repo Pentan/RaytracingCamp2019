@@ -30,23 +30,23 @@ bool Scene::buildForTrace(AssetLibrary *assetlib) {
 }
 
 void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
-    Matrix4 m = gm * node->transform;
+    Matrix4 cm = gm * node->transform;
     for(auto i = node->children.begin(); i != node->children.end(); i++) {
         auto child = assetlib->nodes.at(*i).get();
-        traverseNode(child, m, assetlib);
+        traverseNode(child, cm, assetlib);
     }
     
     switch (node->contentType) {
         case Node::kContentTypeMesh:
-            node->mesh->setGlobalTransform(gm);
+            node->mesh->setGlobalTransform(cm);
             meshes.push_back(node->mesh);
             break;
         case Node::kContentTypeCamera:
-            node->camera->setGlobalTransform(gm);
+            node->camera->setGlobalTransform(cm);
             cameras.push_back(node->camera);
             break;
         case Node::kContentTypeLight:
-            node->light->setGlobalTransform(gm);
+            node->light->setGlobalTransform(cm);
             lights.push_back(node->light);
             break;
         default:

@@ -71,7 +71,7 @@ namespace PinkyPi {
         WrapType wrapX;
         WrapType wrapY;
         
-    private:
+    //private:
         TexcelSample *image;
         
         int wrapSampleX(int x) const;

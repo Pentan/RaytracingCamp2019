@@ -22,6 +22,22 @@ ImageTexture::~ImageTexture() {
 	}
 }
 
+void ImageTexture::init(const Color *src, int w, int h, int ipo) {
+    interpolate = ipo;
+    
+    texels = new Color[w * h];
+    width = w;
+    height = h;
+    
+    for(int iy = 0; iy < height; iy++) {
+        for(int ix = 0; ix < width; ix++) {
+            int i = ix + iy * width;
+            const Color *srctxl = src + i;
+            texels[i].set(srctxl->r, srctxl->g, srctxl->b);
+        }
+    }
+}
+
 bool ImageTexture::load(const std::string& path, int ipo, int flip, R1hFPType gamma, R1hFPType power) {
 	int w, h, comp;
 

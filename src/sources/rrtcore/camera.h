@@ -1,4 +1,4 @@
-﻿#ifndef R1H_CAMERA_H
+#ifndef R1H_CAMERA_H
 #define R1H_CAMERA_H
 
 #include <memory>
@@ -24,7 +24,9 @@ public:
 	// sensor
 	void setSensorSize(const R1hFPType w, const R1hFPType h);
 	void setSensorWidthWithAspect(const R1hFPType w, const R1hFPType aspect);
-	
+    
+    void setFocalLengthFromFOV(R1hFPType fov);
+    
 	//
 	R1hFPType getSensorAspectRatio() const;
 	
@@ -33,6 +35,7 @@ public:
     
 private:
 	Matrix4 invTransform;
+    Matrix4 transform;
 	
 	R1hFPType focalLength;		// [mm]
 	R1hFPType fNumber;			// [N]

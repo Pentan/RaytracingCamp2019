@@ -1,4 +1,4 @@
-﻿#ifndef R1H_MATERIAL_INCLUDE_H
+#ifndef R1H_MATERIAL_INCLUDE_H
 #define R1H_MATERIAL_INCLUDE_H
 
 #include "material.h"
@@ -7,5 +7,6 @@
 #include "skymaterial.h"
 #include "lightmaterial.h"
 #include "sppmaterial.h"
+#include "pbrrmmaterial.h"
 
 #endif

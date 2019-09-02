@@ -14,8 +14,12 @@
 #include "framebuffer.h"
 #include "tonemapper.h"
 //#include "xmlscene.h"
+#include "sceneconverter.h"
 
 #include <pinkycore/config.h>
+#include <pinkycore/scene.h>
+#include <pinkycore/assetlibrary.h>
+#include <pinkypi/sceneloader.h>
 
 //
 #include "eduptscene.h"
@@ -58,26 +62,26 @@ int main(int argc, char *argv[]) {
         std::cerr << "config load failed. use default settings." << std::endl;
     }
     
-    {
-        Renderer::Config conf = render->getConfig();
-        conf.width = ppconfig.width;
-        conf.height = ppconfig.height;
-        conf.samples = ppconfig.samplesPerPixel;
-        conf.subSamples = ppconfig.pixelSubSamples;
-        conf.minDepth = ppconfig.minDepth;
-        conf.maxDepth = ppconfig.maxDepth;
-        conf.tileSize = ppconfig.tileSize;
-        conf.outputFile = ppconfig.outputFile;
-        
-        render->setConfig(conf);
-    }
+    Renderer::Config conf = render->getConfig();
+    conf.width = ppconfig.width;
+    conf.height = ppconfig.height;
+    conf.samples = ppconfig.samplesPerPixel;
+    conf.subSamples = ppconfig.pixelSubSamples;
+    conf.minDepth = ppconfig.minDepth;
+    conf.maxDepth = ppconfig.maxDepth;
+    conf.tileSize = ppconfig.tileSize;
+    conf.outputFile = ppconfig.outputFile;
+    
+    render->setConfig(conf);
 
     // scene setup
     Scene *scene = new Scene();
 	bool loaded = false;
 	
-//    if(argc > 1)
-    {
+    if(ppconfig.inputFile.length() > 0) {
+        loaded = LoadAndConvertPinkyPiScene(ppconfig.inputFile, &ppconfig, scene);
+        
+    } else {
         const Renderer::Config& conf = render->getConfig();
         loaded = EduptScene::load(scene, double(conf.width) / conf.height);
         loaded = true;

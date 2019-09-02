@@ -15,6 +15,7 @@ namespace PinkyPi {
     class Camera;
 //    class Mesh;
     class Light;
+    class Material;
     
     /////
     struct SceneIntersection {
@@ -38,6 +39,8 @@ namespace PinkyPi {
         
 //    private:
         std::vector<Node*> nodes;
+        
+        std::shared_ptr<Material> background;
         
     public:
         // for trace

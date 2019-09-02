@@ -24,7 +24,7 @@
 #include <pinkycore/light.h>
 #include <pinkycore/node.h>
 #include <pinkycore/camera.h>
-//#include <pinkycore/>
+#include <pinkycore/config.h>
 //#include <pinkycore/>
 
 using namespace PinkyPi;
@@ -677,7 +677,7 @@ namespace {
                     lit->lightType = Light::kPointLight;
                     
                 } else if(littype.compare("directional") == 0) {
-                    lit->lightType = Light::kPointLight;
+                    lit->lightType = Light::kDirectionalLight;
                     
                 } else if(littype.compare("sopt") == 0) {
                     lit->lightType = Light::kSpotLight;
@@ -707,7 +707,7 @@ namespace {
         return count;
     }
     
-    int ParseCameras(const tinygltf::Model& model, AssetLibrary *assetlib) {
+    int ParseCameras(const tinygltf::Model& model, AssetLibrary *assetlib, const Config *conf) {
         int count = 0;
         if(model.cameras.size() <= 0) {
             return 0;
@@ -723,7 +723,12 @@ namespace {
             if (gltfcam.type.compare("perspective") == 0) {
                 cam->initWithType(Camera::kPerspectiveCamera);
                 auto gltfpers = gltfcam.perspective;
-                cam->perspective.aspect = gltfpers.aspectRatio;
+                if(gltfpers.aspectRatio != 0.0) {
+                    cam->perspective.aspect = gltfpers.aspectRatio;
+                } else {
+                    cam->perspective.aspect = double(conf->width) / conf->height;
+                }
+                
                 cam->perspective.yfov = gltfpers.yfov;
                 cam->perspective.zfar = gltfpers.zfar;
                 cam->perspective.znear = gltfpers.znear;
@@ -863,22 +868,64 @@ namespace {
                     int nodeid = *nodeite;
                     auto node = assetlib->nodes[nodeid].get();
                     scn->nodes.push_back(node);
-                    switch (node->contentType) {
-                        case Node::kContentTypeMesh:
-                            scn->meshes.push_back(node->mesh);
-                            break;
-                        case Node::kContentTypeLight:
-                            scn->lights.push_back(node->light);
-                            break;
-                        case Node::kContentTypeCamera:
-                            scn->cameras.push_back(node->camera);
-                            break;
-                        case Node::kContentTypeEmpty:
-                            // empty node
-                            break;
-                        default:
-                            std::cerr << node->name << " has unknown content type found:" << node->contentType << std::endl;
-                            break;
+//                    switch (node->contentType) {
+//                        case Node::kContentTypeMesh:
+//                            scn->meshes.push_back(node->mesh);
+//                            break;
+//                        case Node::kContentTypeLight:
+//                            scn->lights.push_back(node->light);
+//                            break;
+//                        case Node::kContentTypeCamera:
+//                            scn->cameras.push_back(node->camera);
+//                            break;
+//                        case Node::kContentTypeEmpty:
+//                            // empty node
+//                            break;
+//                        default:
+//                            std::cerr << node->name << " has unknown content type found:" << node->contentType << std::endl;
+//                            break;
+//                    }
+                }
+            }
+            
+            auto ppextra = FindPinkyPiExtra(gltfscene.extras);
+            if(ppextra.Type() != tinygltf::NULL_TYPE) {
+                if(ppextra.Has("background")) {
+                    auto ppexbg = ppextra.Get("background");
+                    ImageTexture *bgtex = nullptr;
+                    
+                    if(ppexbg.Has("hdr")) {
+                        std::string hdrpath = ppexbg.Get("hdr").Get<std::string>();
+                        std::string relpath = assetlib->getRelativePath(hdrpath);
+                        
+                        //stbi_set_flip_vertically_on_load(0);
+                        //stbi_ldr_to_hdr_gamma(1.0f);
+                        int w, h, ch;
+                        float *buf = stbi_loadf(relpath.c_str(), &w, &h, &ch, 0);
+                        
+                        bgtex = new ImageTexture(w, h);
+                        bgtex->initWithFpImage(buf, ch, 1.0);
+                        
+                        stbi_image_free(buf);
+                    }
+                    else if(ppexbg.Has("gradient")) {
+                        auto ppgrad = ppexbg.Get("gradient");
+                        if(ppgrad.IsArray()) {
+                            int len = ppgrad.ArrayLen();
+                            std::vector<float> tmpbuf(len);
+                            for(int i = 0; i < len; i++) {
+                                auto val = ppgrad.Get(i);
+                                tmpbuf[i] =  val.IsInt()? val.Get<int>() : val.Get<double>();
+                            }
+                            
+                            bgtex = new ImageTexture(1, len / 3);
+                            bgtex->initWithFpImage(tmpbuf.data(), 3, 1.0);
+                        }
+                    }
+                    
+                    if(bgtex != nullptr) {
+                        auto bgmat = new Material();
+                        bgmat->baseColorTexture.texture = bgtex;
                     }
                 }
             }
@@ -890,7 +937,7 @@ namespace {
     }
 }
 
-AssetLibrary* SceneLoader::load(std::string filepath) {
+AssetLibrary* SceneLoader::load(std::string filepath, const Config *conf) {
     tinygltf::TinyGLTF gltfloader;
     
     tinygltf::Model model;
@@ -906,12 +953,13 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     }
     
     AssetLibrary *assetLib = new AssetLibrary();
+    assetLib->setSourcePath(filepath);
     
     ParseTextures(model, assetLib);
     ParseMaterials(model, assetLib);
     ParseMeshs(model, assetLib);
     ParseLights(model, assetLib);
-    ParseCameras(model, assetLib);
+    ParseCameras(model, assetLib, conf);
     ParseNodes(model, assetLib);
     ParseScenes(model, assetLib);
     

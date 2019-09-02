@@ -39,6 +39,11 @@ namespace PinkyPi {
         std::vector<std::shared_ptr<Scene> > scenes;
         
         int defaultSceneId;
+        
+        std::string sourcePath;
+        std::string baseDir;
+        void setSourcePath(std::string path);
+        std::string getRelativePath(std::string path) const;
     };
 }
 
