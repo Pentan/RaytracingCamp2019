@@ -4,6 +4,6 @@
 
     "scrambleTile":false,
 
-    "inputFile":"local_datas/Blender/test01.gltf",
+    "inputFile":"datas/model/test01.gltf",
     "end":0
 }

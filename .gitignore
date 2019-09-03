@@ -4,5 +4,6 @@
 
 src/tests/output
 src/tests/testdata
+src/tests/testconfig.h
 
 .DS_Store
