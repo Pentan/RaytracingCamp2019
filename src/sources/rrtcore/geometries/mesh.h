@@ -1,4 +1,4 @@
-﻿/*
+/*
 ### Mesh data format ###
 vertices[] = {Vector3, ...}
 normals[] = {Vector3, ...}
@@ -46,7 +46,7 @@ public:
         R1hFPType area;
         R1hFPType areaBorder;
 		Vector3 normal;
-		Vector3 tangent;
+		Vector4 tangent;
 		
         Face();
         Face(const int a, const int b, const int c, const int m);
@@ -62,14 +62,14 @@ public:
     Mesh(const int vreserve=0, const int freserv=0);
     ~Mesh();
     
-    size_t addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &t, const Vector3 &uv=0, const int uvid=-1);
+    size_t addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector4 &t, const Vector3 &uv=0, const int uvid=-1);
     size_t addVertex(const Vector3 &v);
     size_t getVertexCount() const;
 	
 	size_t addNormal(const Vector3 &v);
     size_t getNormalCount() const;
     
-    size_t addTangent(const Vector3 &v);
+    size_t addTangent(const Vector4 &v);
     size_t getTangentCount() const;
     
 	size_t newAttributeContainer();
@@ -93,6 +93,8 @@ public:
     virtual SamplePoint getSamplePoint(Random *rng) const;
     virtual void prepareRendering();
 	
+    virtual Vector4 computeTangent(Intersection *intersect) const;    
+    
     // BVHLeaf
 	virtual bool isIntersectLeaf(int dataid, const Ray &ray, Intersection *intersect) const;
 	//bool triangleIntersect(const int faceid, const Ray &ray, Intersection *intersect) const;
@@ -103,7 +105,7 @@ public:
 private:
 	std::vector<Vector3> vertices;
 	std::vector<Vector3> normals;
-	std::vector<Vector3> tangents;
+	std::vector<Vector4> tangents;
     std::vector<std::vector<Vector3> > attributes;
     std::vector<Face> faces;
 	R1hFPType surfArea;

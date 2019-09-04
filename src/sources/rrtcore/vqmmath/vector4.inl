@@ -39,6 +39,10 @@ template<typename FPType>
 inline bool Vector4<FPType>::isZero(void) const {
     return x == 0.0 && y == 0.0 && z == 0.0 && w == 0.0;
 }
+template<typename FPType>
+inline bool Vector4<FPType>::isZero(FPType eps) const {
+    return std::abs(x) < eps && std::abs(y) < eps && std::abs(z) < eps && std::abs(w) < eps;
+}
 
 template<typename FPType>
 inline void Vector4<FPType>::normalize(void) {
@@ -127,19 +131,25 @@ void Vector4<FPType>::sprint(char *buf, const Vector4 v) {
 }
 
 // operators
-template<typename FPType> inline Vector4<FPType> Vector4<FPType>::operator+(const Vector4 &v) {
+template<typename FPType>
+inline Vector4<FPType> Vector4<FPType>::operator+(const Vector4 &v) const {
     return Vector4(x + v.x, y + v.y, z + v.z, w + v.w);
 }
-template<typename FPType> inline Vector4<FPType> Vector4<FPType>::operator-(const Vector4 &v) {
+template<typename FPType>
+inline Vector4<FPType> Vector4<FPType>::operator-(const Vector4 &v) const {
     return Vector4(x - v.x, y - v.y, z - v.z, w - v.w);
 }
-template<typename FPType> inline Vector4<FPType> Vector4<FPType>::operator*(const FPType s) {
-    return Vector4(v.x * s, v.y * s, v.z * s, v.w * s);
+template<typename FPType>
+inline Vector4<FPType> Vector4<FPType>::operator*(const FPType s) const {
+    return Vector4(x * s, y * s, z * s, w * s);
 }
-template<typename FPType> inline Vector4<FPType> Vector4<FPType>::operator/(const FPType s) {
-    return Vector4(v.x / s, v.y / s, v.z / s, v.w / s);
+
+template<typename FPType>
+inline Vector4<FPType> Vector4<FPType>::operator/(const FPType s) const {
+    return Vector4(x / s, y / s, z / s, w / s);
 }
-template<typename FPType> inline Vector4<FPType> Vector4<FPType>::operator+=(const Vector4 &b) {
+template<typename FPType>
+inline Vector4<FPType> Vector4<FPType>::operator+=(const Vector4 &b) const {
     x += b.x;
     y += b.y;
     z += b.z;

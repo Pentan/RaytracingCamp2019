@@ -1,4 +1,4 @@
-﻿#ifndef R1H_MATH_H
+#ifndef R1H_MATH_H
 #define R1H_MATH_H
 
 #include <math.h>

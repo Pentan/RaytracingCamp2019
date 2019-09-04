@@ -1,5 +1,6 @@
 
 #include "intersection.h"
+#include "sceneobject.h"
 
 using namespace r1h;
 
@@ -8,7 +9,7 @@ Intersection::Intersection():
     position(),
 	hitNormal(),
     geometryNormal(),
-    tangent(0.0),
+    //tangent(0.0),
     objectId(kNoIntersected)
 {}
 
@@ -36,17 +37,19 @@ FinalIntersection::~FinalIntersection() {
 }
 
 void FinalIntersection::computeTangentSpaceWithShadingNormal(const Vector3& shdnorm) {
+    // shading params
     shadingNormal = shdnorm;
+    Vector4 geomtan = objectRef->getGeometry()->computeTangent(this);
+    shadingTangent = Vector3(geomtan.x, geomtan.y, geomtan.z);
+    shadingCotangent = Vector3::cross(shadingTangent, shadingNormal) * geomtan.w;
+    shadingCotangent.normalize();
     
-    if(tangent.isZero(kEPS)) {
-        // tangent is not defined. generate it from shadingNormal
-        tangent = Vector3::cross(Vector3(0.0, 0.0, 1.0), shadingNormal);
-        if(!tangent.normalize()) {
-            tangent.set(1.0, 0.0, 0.0);
-        }
+    // compute basis
+    Vector3 tangent = Vector3::cross(Vector3(0.0, 0.0, 1.0), shadingNormal);
+    if(!tangent.normalize()) {
+        tangent.set(1.0, 0.0, 0.0);
     }
-    
-    Vector3 basisx = tangent;
+    Vector3 basisx = Vector3(tangent.x, tangent.y, tangent.z);
     Vector3 basisy;
     Vector3 basisz = shadingNormal;
     

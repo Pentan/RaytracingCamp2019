@@ -144,6 +144,26 @@ Vector3 FineGlassMaterial::getShadingNormal(const FinalIntersection &isect) cons
         return isect.hitNormal;
     } else {
         // normal map
-        return tex->sampleAsVector(&isect);
+        Vector3 retnorm;
+        Vector3 mapnorm = tex->sampleAsVector(&isect);
+        switch (tex->getMapSpace()) {
+            case Texture::kTangentSpace:
+            {
+                retnorm.x = mapnorm.x * isect.shadingTangent.x + mapnorm.y * isect.shadingNormal.x + mapnorm.z * isect.shadingCotangent.x;
+                retnorm.y = mapnorm.x * isect.shadingTangent.y + mapnorm.y * isect.shadingNormal.y + mapnorm.z * isect.shadingCotangent.y;
+                retnorm.z = mapnorm.x * isect.shadingTangent.z + mapnorm.y * isect.shadingNormal.z + mapnorm.z * isect.shadingCotangent.z;
+                retnorm.normalize();
+            }
+                break;
+            case Texture::kObjectSpace:
+                // TODO
+                retnorm = mapnorm;
+                break;
+            case Texture::kWorldSpace:
+            default:
+                retnorm = mapnorm;
+                break;
+        }
+        return retnorm;
     }
 }

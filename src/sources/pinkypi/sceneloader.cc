@@ -36,7 +36,7 @@ namespace {
     // Utikity Classes
     class BufferAccessor {
     private:
-        unsigned char* bufferPtr;
+        uint8_t* bufferPtr;
         size_t byteStride;
         size_t componentSize;
         int componentsInStruct;
@@ -71,11 +71,11 @@ namespace {
         }
         
         void init(const tinygltf::Accessor& accessor, const tinygltf::Model& model) {
-            auto bufferview = model.bufferViews[accessor.bufferView];
-            auto buffer = model.buffers[bufferview.buffer];
+            auto& bufferview = model.bufferViews[accessor.bufferView];
+            auto& buffer = model.buffers[bufferview.buffer];
             
             size_t offset = bufferview.byteOffset + accessor.byteOffset;
-            bufferPtr = buffer.data.data() + offset;
+            bufferPtr = const_cast<uint8_t*>(buffer.data.data() + offset);
             byteStride = bufferview.byteStride;
             structCount = accessor.count;
             
@@ -366,11 +366,11 @@ namespace {
             
             // "pbrMetallicRoughness"
             for(auto valite = gltfmat.values.begin(); valite != gltfmat.values.end(); ++valite) {
-                auto kv = *valite;
+                const auto& kv = *valite;
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
-                std::cerr << key << " found" << std::endl;
+                //std::cerr << key << " found" << std::endl;
                 
                 if(key.compare("baseColorTexture") == 0) {
                     mat->baseColorTexture.texCoord = val.TextureTexCoord();
@@ -396,11 +396,11 @@ namespace {
 
             // additional
             for(auto valite = gltfmat.additionalValues.begin(); valite != gltfmat.additionalValues.end(); ++valite) {
-                auto kv = *valite;
+                const auto& kv = *valite;
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
-                std::cerr << key << " found" << std::endl;
+                // std::cerr << key << " found" << std::endl;
                 
                 if(key.compare("normalTexture") == 0) {
                     mat->normalTexture.texCoord = val.TextureTexCoord();
@@ -440,7 +440,7 @@ namespace {
             }
             
             // extra
-            auto ppextra = FindPinkyPiExtra(gltfmat.extras);
+            auto& ppextra = FindPinkyPiExtra(gltfmat.extras);
             if(ppextra.Type() != tinygltf::NULL_TYPE) {
                 if(ppextra.Has("ior")) {
                     mat->ior = ppextra.Get("ior").Get<PPFloat>();
@@ -463,8 +463,8 @@ namespace {
         assetlib->meshes.reserve(model.meshes.size());
         
         for(auto ite = model.meshes.begin(); ite != model.meshes.end(); ++ite) {
-            auto gltfmesh = *ite;
-            auto gltfprims = gltfmesh.primitives;
+            const auto& gltfmesh = *ite;
+            const auto& gltfprims = gltfmesh.primitives;
             
             if(gltfprims.size() <= 0) {
                 continue;
@@ -477,14 +477,14 @@ namespace {
             int totalVerts = 0;
             int totalTris = 0;
             for(auto prmite = gltfprims.begin(); prmite != gltfprims.end(); ++prmite) {
-                auto gltfprimitive = *prmite;
+                const auto& gltfprimitive = *prmite;
                 
                 // Vertex
                 int accid;
                 
                 accid = gltfprimitive.attributes.at("POSITION");
                 auto posba = BufferAccessor(model.accessors[accid], model);
-                
+
                 accid = gltfprimitive.attributes.at("NORMAL");
                 auto nrmba = BufferAccessor(model.accessors[accid], model);
                 
@@ -539,6 +539,7 @@ namespace {
                     attrs.tangent.x = tanba.readFloat();
                     attrs.tangent.y = tanba.readFloat();
                     attrs.tangent.z = tanba.readFloat();
+                    attrs.tangent.w = tanba.readFloat();
                     
                     attrs.uv0.x = uv0ba.readFloat();
                     attrs.uv0.y = uv0ba.readFloat();
@@ -715,14 +716,14 @@ namespace {
         assetlib->cameras.reserve(model.cameras.size());
         
         for(auto ite = model.cameras.begin(); ite != model.cameras.end(); ++ite) {
-            auto gltfcam = *ite;
+            const auto& gltfcam = *ite;
             
             Camera *cam = new Camera();
             cam->name = gltfcam.name;
             
             if (gltfcam.type.compare("perspective") == 0) {
                 cam->initWithType(Camera::kPerspectiveCamera);
-                auto gltfpers = gltfcam.perspective;
+                const auto& gltfpers = gltfcam.perspective;
                 if(gltfpers.aspectRatio != 0.0) {
                     cam->perspective.aspect = gltfpers.aspectRatio;
                 } else {
@@ -735,7 +736,7 @@ namespace {
                 
             } else if (gltfcam.type.compare("orthographic") == 0) {
                 cam->initWithType(Camera::kOrthographicsCamera);
-                auto gltfortho = cam->orthographics;
+                const auto& gltfortho = cam->orthographics;
                 cam->orthographics.xmag = gltfortho.xmag;
                 cam->orthographics.ymag = gltfortho.ymag;
                 cam->orthographics.zfar = gltfortho.zfar;
@@ -774,7 +775,7 @@ namespace {
         assetlib->nodes.reserve(model.nodes.size());
         
         for(auto ite = model.nodes.begin(); ite != model.nodes.end(); ++ite) {
-            auto gltfnode = *ite;
+            const auto& gltfnode = *ite;
             
             // get transform
             Matrix4 transmat;
@@ -801,7 +802,7 @@ namespace {
             }
             
             if(gltfnode.matrix.size() > 0) {
-                auto mat = gltfnode.matrix;
+                const auto& mat = gltfnode.matrix;
                 transmat.set(
                     mat[0], mat[1], mat[2], mat[3],
                     mat[4], mat[5], mat[6], mat[7],
@@ -831,7 +832,7 @@ namespace {
                 }
             }
             
-            auto extensions = gltfnode.extensions;
+            const auto& extensions = gltfnode.extensions;
             if(extensions.find("KHR_lights_punctual") != extensions.end()) {
                 auto lit_punk = extensions.at("KHR_lights_punctual");
                 if(lit_punk.IsObject()) {
@@ -859,7 +860,7 @@ namespace {
         assetlib->scenes.reserve(model.scenes.size());
         
         for(auto ite = model.scenes.begin(); ite != model.scenes.end(); ++ite) {
-            auto gltfscene = *ite;
+            const auto& gltfscene = *ite;
             
             auto scn = new Scene();
             if(gltfscene.nodes.size() > 0) {
@@ -888,7 +889,7 @@ namespace {
                 }
             }
             
-            auto ppextra = FindPinkyPiExtra(gltfscene.extras);
+            const auto ppextra = FindPinkyPiExtra(gltfscene.extras);
             if(ppextra.Type() != tinygltf::NULL_TYPE) {
                 if(ppextra.Has("background")) {
                     auto ppexbg = ppextra.Get("background");

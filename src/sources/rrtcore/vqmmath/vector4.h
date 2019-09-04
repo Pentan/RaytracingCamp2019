@@ -29,6 +29,7 @@ template<typename FPType> union Vector4 {
     
     inline FPType length(void) const;
     inline bool isZero(void) const;
+    inline bool isZero(FPType eps) const;
     
     inline void normalize(void);
     inline void negate(void);
@@ -50,11 +51,11 @@ template<typename FPType> union Vector4 {
     static void sprint(char *buf, const Vector4 v);
     
     // operators
-    inline Vector4 operator+(const Vector4 &v);
-    inline Vector4 operator-(const Vector4 &v);
-    inline Vector4 operator*(const FPType s);
-    inline Vector4 operator/(const FPType s);
-    inline Vector4 operator+=(const Vector4 &b);
+    inline Vector4 operator+(const Vector4 &v) const;
+    inline Vector4 operator-(const Vector4 &v) const;
+    inline Vector4 operator*(const FPType s) const;
+    inline Vector4 operator/(const FPType s) const;
+    inline Vector4 operator+=(const Vector4 &b) const;
 };
 
 template<typename FPType> inline const Vector4<FPType> operator*(const FPType s, const Vector4<FPType> &v);

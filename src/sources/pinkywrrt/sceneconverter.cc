@@ -30,53 +30,87 @@ namespace {
     }
     
     r1h::MaterialRef ConvertMaterial(PinkyPi::Material *ppmat) {
-        auto rrtmat = new r1h::PBRRoughnessMetallicMaterial();
-        const PinkyPi::Color& bcf = ppmat->baseColorFactor;
-        rrtmat->setBaseColorFactor(r1h::Color(bcf.r, bcf.g, bcf.b));
-        rrtmat->setMetallicFactor(ppmat->metallicFactor);
-        rrtmat->setRoughnessFactor(ppmat->roughnessFactor);
-        const PinkyPi::Color& emf = ppmat->emissiveFactor;
-        rrtmat->setEmissiveFactor(r1h::Color(emf.r, emf.g, emf.b));
-        
-        if(ppmat->baseColorTexture.texture != nullptr) {
-            auto tex = ConvertImageTexture(ppmat->baseColorTexture.texture);
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kBaseColor, tex);
+        if(ppmat->baseColorAlpha <= 0.0) {
+            auto rrtmat = new r1h::FineGlassMaterial();
+            
+            if(ppmat->baseColorTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->baseColorTexture.texture);
+                rrtmat->setTexture(r1h::FineGlassMaterial::kTransmittance, tex);
+            } else {
+                const PinkyPi::Color& bcf = ppmat->baseColorFactor;
+                auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(bcf.r, bcf.g, bcf.b)));
+                rrtmat->setTexture(r1h::FineGlassMaterial::kTransmittance, tex);
+            }
+            
+            {
+                auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(0.8, 0.8, 0.8)));
+                rrtmat->setTexture(r1h::FineGlassMaterial::kReflectance, tex);
+            }
+            
+            
+            if(ppmat->normalTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->normalTexture.texture);
+                tex->setMapType(r1h::Texture::kTangentSpace);
+                rrtmat->setTexture(r1h::FineGlassMaterial::kNormalMap, tex);
+            } else {
+                auto tex = r1h::TextureRef(nullptr);
+                rrtmat->setTexture(r1h::FineGlassMaterial::kNormalMap, tex);
+            }
+            
+            rrtmat->setIor(ppmat->ior);
+            
+            return r1h::MaterialRef(rrtmat);
+            
         } else {
-            auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(1.0, 1.0, 1.0)));
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kBaseColor, tex);
+        
+            auto rrtmat = new r1h::PBRRoughnessMetallicMaterial();
+            const PinkyPi::Color& bcf = ppmat->baseColorFactor;
+            rrtmat->setBaseColorFactor(r1h::Color(bcf.r, bcf.g, bcf.b));
+            rrtmat->setMetallicFactor(ppmat->metallicFactor);
+            rrtmat->setRoughnessFactor(ppmat->roughnessFactor);
+            const PinkyPi::Color& emf = ppmat->emissiveFactor;
+            rrtmat->setEmissiveFactor(r1h::Color(emf.r, emf.g, emf.b));
+            
+            if(ppmat->baseColorTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->baseColorTexture.texture);
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kBaseColor, tex);
+            } else {
+                auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(1.0, 1.0, 1.0)));
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kBaseColor, tex);
+            }
+            
+            if(ppmat->metallicRoughnessTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->metallicRoughnessTexture.texture);
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kMetallicRoughness, tex);
+            } else {
+                auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(1.0, 1.0, 1.0)));
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kMetallicRoughness, tex);
+            }
+            
+            if(ppmat->emissiveTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->emissiveTexture.texture);
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kEmissive, tex);
+            } else {
+                auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(0.0, 0.0, 0.0)));
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kEmissive, tex);
+            }
+            
+            if(ppmat->normalTexture.texture != nullptr) {
+                auto tex = ConvertImageTexture(ppmat->normalTexture.texture);
+                tex->setMapType(r1h::Texture::kTangentSpace);
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
+            } else {
+    //            auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(0.5, 0.5, 1.0)));
+    //            tex->setMapType(r1h::Texture::kTangentSpace);
+    //            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
+                auto tex = r1h::TextureRef(nullptr);
+                rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
+            }
+            
+            rrtmat->setSpecularIor(ppmat->ior);
+            
+            return r1h::MaterialRef(rrtmat);
         }
-        
-        if(ppmat->metallicRoughnessTexture.texture != nullptr) {
-            auto tex = ConvertImageTexture(ppmat->metallicRoughnessTexture.texture);
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kMetallicRoughness, tex);
-        } else {
-            auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(1.0, 1.0, 1.0)));
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kMetallicRoughness, tex);
-        }
-        
-        if(ppmat->emissiveTexture.texture != nullptr) {
-            auto tex = ConvertImageTexture(ppmat->emissiveTexture.texture);
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kEmissive, tex);
-        } else {
-            auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(0.0, 0.0, 0.0)));
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kEmissive, tex);
-        }
-        
-        if(ppmat->normalTexture.texture != nullptr) {
-            auto tex = ConvertImageTexture(ppmat->normalTexture.texture);
-            tex->setMapType(r1h::Texture::kTangentSpace);
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
-        } else {
-//            auto tex = r1h::TextureRef(new r1h::ConstantColorTexture(r1h::Color(0.5, 0.5, 1.0)));
-//            tex->setMapType(r1h::Texture::kTangentSpace);
-//            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
-            auto tex = r1h::TextureRef(nullptr);
-            rrtmat->setTexture(r1h::PBRRoughnessMetallicMaterial::kNormal, tex);
-        }
-        
-        rrtmat->setSpecularIor(ppmat->ior);
-        
-        return r1h::MaterialRef(rrtmat);
     }
     
     void ConvertPinkyMeshToRrTObject(PinkyPi::Mesh *ppmesh, r1h::SceneObject *rrtobj) {
@@ -98,7 +132,7 @@ namespace {
                 
                 r1h::Vector3 rrtvrt(ppvrt.x, ppvrt.y, ppvrt.z);
                 r1h::Vector3 rrtnorm(ppattr.normal.x, ppattr.normal.y, ppattr.normal.z);
-                r1h::Vector3 rrttan(ppattr.tangent.x, ppattr.tangent.y, ppattr.tangent.z);
+                r1h::Vector4 rrttan(ppattr.tangent.x, ppattr.tangent.y, ppattr.tangent.z, ppattr.tangent.w);
                 r1h::Vector3 rrtuv0(ppattr.uv0.x, ppattr.uv0.y, ppattr.uv0.z);
                 
                 rrtmesh->addVertex(rrtvrt);

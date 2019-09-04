@@ -1,8 +1,12 @@
 {
-    "width":256,
-    "height":256,
+    "width":1920,
+    "height":1080,
 
     "scrambleTile":false,
+
+    "limitSec":25.0,
+    "progressIntervalSec":-1.0,
+    "waitUntilFinish":false,
 
     "inputFile":"datas/model/test01.gltf",
     "end":0

@@ -22,7 +22,7 @@ public:
     Vector3 hitNormal;
     Vector3 geometryNormal;
     
-    Vector3 tangent;
+    //Vector4 tangent;
     
     Vector3 varyingWeight;
     int faceId;
@@ -43,6 +43,9 @@ public:
     const SceneObject *objectRef;
     
     Vector3 shadingNormal;
+    Vector3 shadingTangent;
+    Vector3 shadingCotangent;
+    
     Matrix4 tangentSpaceBasis;
     Matrix4 inverseTangentSpaceBasis;
     

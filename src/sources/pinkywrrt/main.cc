@@ -47,7 +47,7 @@ static const char kProgressChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEF
 ///
 int main(int argc, char *argv[]) {
 
-	std::cout << "RrT" << std::endl;
+	std::cout << "PinkyPi with RrT" << std::endl;
 
     using namespace r1h;
 
@@ -71,14 +71,21 @@ int main(int argc, char *argv[]) {
     conf.maxDepth = ppconfig.maxDepth;
     conf.tileSize = ppconfig.tileSize;
     conf.outputFile = ppconfig.outputFile;
+	conf.maxLimitTime = ppconfig.limitSec;
+	conf.progressOutInterval = ppconfig.progressIntervalSec;
+	conf.renderMode = ppconfig.waitUntilFinish ? r1h::Renderer::kStandard : r1h::Renderer::kTimeLimit;
     
     render->setConfig(conf);
+
+	std::cout << "render mode:" << conf.renderMode << std::endl;
+	std::cout << "render limit time:" << conf.maxLimitTime << "[sec]" << std::endl;
 
     // scene setup
     Scene *scene = new Scene();
 	bool loaded = false;
 	
     if(ppconfig.inputFile.length() > 0) {
+		std::cout << "scene file:" << ppconfig.inputFile << std::endl;
         loaded = LoadAndConvertPinkyPiScene(ppconfig.inputFile, &ppconfig, scene);
         
     } else {

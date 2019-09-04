@@ -219,9 +219,11 @@ target_include_directories(RrTCore
 # ${PINKYPI_CORE_DIR}
 
 if (UNIX AND NOT APPLE)
-    set(PTHREAD_LINK_FLAG -lpthread)
+    set(ADDITIONAL_LINK_FLAG -lpthread)
+elseif (WIN32)
+    set(ADDITIONAL_LINK_FLAG winmm.lib)
 else ()
-    set(PTHREAD_LINK_FLAG )
+    set(ADDITIONAL_LINK_FLAG )
 endif ()
 
 add_executable(PinkyWithRrT
@@ -236,7 +238,7 @@ target_link_libraries(PinkyWithRrT
     PinkyCore
     LinearAlgebra
     ThirdpartyLibs
-    ${PTHREAD_LINK_FLAG}
+    ${ADDITIONAL_LINK_FLAG}
 )
 target_include_directories(PinkyWithRrT
     PRIVATE

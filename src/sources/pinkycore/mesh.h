@@ -25,7 +25,7 @@ namespace PinkyPi {
     public:
         struct Attributes {
             Vector3 normal;
-            Vector3 tangent;
+            Vector4 tangent;
             Vector3 uv0;
             Vector3 uv1;
             Color color;

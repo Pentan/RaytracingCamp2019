@@ -1,4 +1,4 @@
-﻿#ifndef R1H_ABSTRACT_GEOMETRY_H
+#ifndef R1H_ABSTRACT_GEOMETRY_H
 #define R1H_ABSTRACT_GEOMETRY_H
 
 #include <memory>
@@ -28,6 +28,8 @@ public:
     virtual bool isIntersect(const Ray &ray, Intersection *intersect) const = 0;
 	
     virtual SamplePoint getSamplePoint(Random *rng) const = 0;
+    
+    virtual Vector4 computeTangent(Intersection *intersect) const { return Vector4(0.0, 0.0, 0.0, 0.0); };
     
 	// optional
 	virtual void prepareRendering() { /* ex.:build VBH for mesh */ }

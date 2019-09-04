@@ -61,7 +61,7 @@ Mesh::~Mesh() {
 	}
 }
 
-size_t Mesh::addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &t, const Vector3 &uv, const int uvid) {
+size_t Mesh::addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector4 &t, const Vector3 &uv, const int uvid) {
 	size_t ret = addVertex(p);
 	addNormal(n);
     addTangent(t);
@@ -88,7 +88,7 @@ size_t Mesh::getNormalCount() const {
 	return normals.size();
 }
 
-size_t Mesh::addTangent(const Vector3 &v) {
+size_t Mesh::addTangent(const Vector4 &v) {
     tangents.push_back(v);
     //printf("vt (%lf,%lf,%lf)\n", v.x, v.y, v.z); //+++++
     return tangents.size() - 1;
@@ -144,6 +144,27 @@ Vector3 Mesh::getVaryingAttr(const int faceid, const int attrid, const Vector3 w
     
     return a0 * weights.x + a1 * weights.y + a2 * weights.z;
 }
+
+Vector4 Mesh::computeTangent(Intersection *intersect) const {
+    const Face &face = faces[intersect->faceId];
+    const Vector4 t0 = tangents[face.t0];
+    const Vector4 t1 = tangents[face.t1];
+    const Vector4 t2 = tangents[face.t2];
+    
+    const Vector3& w = intersect->varyingWeight;
+    
+    Vector4 t = t0 * w.x + t1 * w.y + t2 * w.z;
+    t.w = (t.w > 0.0) ? 1.0 : -1.0;
+    R1hFPType l = t.x * t.x + t.y * t.y + t.z * t.z;
+    if(l > 0.0) {
+        l = 1.0 / std::sqrt(l);
+        t.x *= l;
+        t.y *= l;
+        t.z *= l;
+    }
+    
+    return t;
+};
 
 void Mesh::postProcess() {
 	// calc face tangent space, surface area and so on.
