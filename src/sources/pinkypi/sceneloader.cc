@@ -924,9 +924,24 @@ namespace {
                         }
                     }
                     
+                    Color basecol(1.0, 1.0, 1.0);
+                    if(ppexbg.Has("colorFactor")) {
+                        auto ppcf = ppexbg.Get("colorFactor");
+                        if(ppcf.IsArray()) {
+                            auto rv = ppcf.Get(0);
+                            auto gv = ppcf.Get(1);
+                            auto bv = ppcf.Get(2);
+                            basecol.r = rv.IsInt()? rv.Get<int>() : rv.Get<double>();
+                            basecol.g = gv.IsInt()? gv.Get<int>() : gv.Get<double>();
+                            basecol.b = bv.IsInt()? bv.Get<int>() : bv.Get<double>();
+                        }
+                    }
+                    
                     if(bgtex != nullptr) {
                         auto bgmat = new Material();
                         bgmat->baseColorTexture.texture = bgtex;
+                        bgmat->baseColorFactor = basecol;
+                        scn->background = std::shared_ptr<Material>(bgmat);
                     }
                 }
             }

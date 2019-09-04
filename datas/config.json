@@ -4,10 +4,13 @@
 
     "scrambleTile":false,
 
-    "limitSec":25.0,
+    "samplesPerPixel":2,
+    "pixelSubSamples":1,
+
+    "limitSec":55.0,
     "progressIntervalSec":-1.0,
     "waitUntilFinish":false,
 
-    "inputFile":"datas/model/test01.gltf",
+    "inputFile":"datas/model/scene2019.gltf",
     "end":0
 }

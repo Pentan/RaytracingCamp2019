@@ -32,7 +32,7 @@ void AssetLibrary::setSourcePath(std::string path) {
 
 std::string AssetLibrary::getRelativePath(std::string path) const {
     if(baseDir.length() > 0) {
-        return baseDir + path;
+        return baseDir + "/" + path;
     }
     return path;
 }

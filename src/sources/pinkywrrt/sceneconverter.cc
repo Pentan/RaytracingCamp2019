@@ -167,8 +167,11 @@ namespace {
             //skymat->setColor(r1h::Color(0.5, 0.5, 0.5));
         
         } else {
-            auto bgtex = ConvertImageTexture(ppscn->background->baseColorTexture.texture);
+            auto ppmat = ppscn->background.get();
+            auto bgtex = ConvertImageTexture(ppmat->baseColorTexture.texture);
             skymat->setTexture(bgtex);
+            const auto& cf = ppmat->baseColorFactor;
+            skymat->setMultiplyColor(r1h::Color(cf.r, cf.g, cf.b));
         }
         
         rrtscene->setSkyMaterial(r1h::SkyMaterialRef(skymat));

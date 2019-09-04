@@ -34,7 +34,15 @@
                 2,
                 4,
                 5
-            ]
+            ],
+            "extras" : {
+                "PinkyPi-Extra" : {
+                    "background" : {
+                        "hdr" : "pyuro_s.hdr",
+                        "colorFactor" : [2.0, 2.0, 2.0]
+                    }
+                }
+            }
         }
     ],
     "nodes" : [
