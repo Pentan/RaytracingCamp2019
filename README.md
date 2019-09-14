@@ -6,6 +6,8 @@ A raytracer for [レイトレ合宿7](https://sites.google.com/site/raytracingca
 
 ![result image](etc/output.png)
 
+[slide is here](etc/slide/slide.pdf)
+
 Dependency
 * [stb](https://github.com/nothings/stb/) for image IO.
 * [tinygltf](https://github.com/syoyo/tinygltf) for glTF import.
