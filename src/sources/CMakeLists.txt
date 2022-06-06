@@ -21,7 +21,7 @@ add_library(LinearAlgebra INTERFACE)
 add_custom_target(LinearAlgebra_h SOURCES ${LINEARALGEBRA_SRCS})
 
 # Core
-list(APPEND PINKIPI_CORE_SRCS
+list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/aabb.cc
     ${PINKYPI_CORE_DIR}/config.cc
     ${PINKYPI_CORE_DIR}/framebuffer.cc
@@ -38,7 +38,7 @@ list(APPEND PINKIPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/assetlibrary.cc
     ${PINKYPI_CORE_DIR}/bvh.cc
 )
-list(APPEND PINKIPI_CORE_SRCS
+list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/pptypes.h
     ${PINKYPI_CORE_DIR}/ray.h
     ${PINKYPI_CORE_DIR}/aabb.h
@@ -59,7 +59,7 @@ list(APPEND PINKIPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/random.h
 )
 
-add_library(PinkyCore ${PINKIPI_CORE_SRCS})
+add_library(PinkyCore ${PINKYPI_CORE_SRCS})
 target_include_directories(PinkyCore
     PRIVATE
     ${PINKYPI_SOURCE_DIR}
@@ -69,7 +69,6 @@ target_include_directories(PinkyCore
 # ${PINKYPI_LINEARALGEBRA_DIR}
 
 # Application
-
 list(APPEND PINLYPI_APP_SRCS
     ${PINKYPI_MAIN_DIR}/sceneloader.cc
 )
@@ -77,7 +76,7 @@ list(APPEND PINLYPI_APP_SRCS
     ${PINKYPI_MAIN_DIR}/sceneloader.h
 )
 add_library(PinkyPiApp ${PINLYPI_APP_SRCS})
-target_include_directories(PinkyPiApp
+    target_include_directories(PinkyPiApp
     PRIVATE
     ${PINKYPI_SOURCE_DIR}
     ${PINKYPI_CORE_DIR}

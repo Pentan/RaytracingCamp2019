@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
     
     scene->buildForTrace(assetlib);
     
-    PinkyPi::Renderer renderer(config);
-    renderer.render(scene);
+    PinkyPi::Renderer renderer(config, scene);
+    renderer.render();
     
     PinkyPi::PostProcessor pp(renderer.framebuffer);
     pp.process();

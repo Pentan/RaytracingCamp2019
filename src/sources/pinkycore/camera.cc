@@ -38,3 +38,8 @@ void Camera::initWithType(CameraType t)
             break;
     }
 }
+
+Ray Camera::getRay(PPFloat tx, PPFloat ty)
+{
+    return Ray();
+}
