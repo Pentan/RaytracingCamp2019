@@ -3,7 +3,8 @@
 /builds
 
 src/tests/output
-src/tests/testdata
+src/tests/testdata/*
+!src/tests/testdata/_memo.txt
 src/tests/testconfig.h
 
 .DS_Store
