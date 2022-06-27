@@ -1,8 +1,18 @@
 # src/CMakeLists.txt
-# macOS example: cmake -DCMAKE_OSX_ARCHITECTURES="Intel" -G Xcode ../src
-
 cmake_minimum_required (VERSION 3.8)
+
+option(PINKYPI_NO_STD_FILESYSTEM "don't use c++ filesystem" OFF)
+message(STATUS "PINKYPI_NO_STD_FILESYSTEM ${PINKYPI_NO_STD_FILESYSTEM}")
+
 project (PinkyPi)
+
+if (PINKYPI_NO_STD_FILESYSTEM)
+add_compile_definitions(PINKYPI_NO_STD_FILESYSTEM)
+endif (PINKYPI_NO_STD_FILESYSTEM)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+add_compile_definitions(_USE_MATH_DEFINES)
+endif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)

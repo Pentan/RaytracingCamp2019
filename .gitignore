@@ -1,6 +1,6 @@
 .vscode
 /local_datas
-/builds
+/build
 
 src/tests/output
 src/tests/testdata/*

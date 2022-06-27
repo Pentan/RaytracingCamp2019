@@ -5,11 +5,6 @@
 # add_subdirectory(pinkypiTests)
 
 # Config
-include(CheckIncludeFileCXX)
-check_include_file_cxx(filesystem, HAS_STD_FILESYSTEM_H)
-if (HAS_STD_FILESYSTEM_H)
-add_compile_definitions(PINKYPI_HAS_STD_FILESYSTEM)
-endif (HAS_STD_FILESYSTEM_H)
 
 set(TEST_OUTPUT_DIR "\"${PINKYPI_TTEST_DIR}/output\"")
 set(TEST_DATA_DIR "\"${PINKYPI_TTEST_DIR}/testdata\"")

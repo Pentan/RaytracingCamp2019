@@ -4,7 +4,7 @@
 
 using namespace PinkyPi;
 
-#ifdef PINKYPI_HAS_STD_FILESYSTEM
+#ifndef PINKYPI_NO_STD_FILESYSTEM
 #include <filesystem>
 namespace {
 bool CheckExistsOrCreateDir(std::string dirpath) {
