@@ -1,7 +1,7 @@
 #include <string>
 #include <sstream>
 
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <pinkycore/pptypes.h>
@@ -12,7 +12,7 @@
 
 using namespace PinkyPi;
 
-TEST_CASE("Scene loader test", "[SceneLoader]") {
+TEST_CASE("Scene loader test [SceneLoader]") {
     std::string basedir = "/models";
 //    std::string filename = "/BoxTexturedNonPowerOfTwo/glTF/BoxTexturedNonPowerOfTwo.gltf";
 //    std::string filename = "/Lantern/glTF/Lantern.gltf";

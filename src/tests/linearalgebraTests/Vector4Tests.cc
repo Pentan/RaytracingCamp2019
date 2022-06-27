@@ -1,6 +1,6 @@
 
 #include <cmath>
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <linearalgebra/vector3.h>
@@ -11,8 +11,8 @@ namespace {
     typedef linearalgebra::Vector4<double> Vector4;
 }
 
-TEST_CASE("Vector4 construct and initialize", "[vector4]") {
-    SECTION("implicit constructor") {
+TEST_CASE("Vector4 construct and initialize [vector4]") {
+    SUBCASE("implicit constructor") {
         Vector4 v;
         REQUIRE( v.x == 0.0 );
         REQUIRE( v.y == 0.0 );
@@ -20,7 +20,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 0.0 );
     }
     
-    SECTION("1 args constructor") {
+    SUBCASE("1 args constructor") {
         Vector4 v(5.0);
         REQUIRE( v.x == 5.0 );
         REQUIRE( v.y == 5.0 );
@@ -28,7 +28,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 5.0 );
     }
     
-    SECTION("3 args constructor") {
+    SUBCASE("3 args constructor") {
         Vector4 v(1.0, 2.0, 3.0, 4.0);
         REQUIRE( v.x == 1.0 );
         REQUIRE( v.y == 2.0 );
@@ -36,7 +36,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 4.0 );
     }
     
-    SECTION("value acces") {
+    SUBCASE("value acces") {
         Vector4 v(1.0, 2.0, 3.0, 4.0);
         REQUIRE( v.x == 1.0 );
         REQUIRE( v.y == 2.0 );
@@ -59,7 +59,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.v[3] == 4.0 );
     }
     
-    SECTION("set 3 args") {
+    SUBCASE("set 3 args") {
         Vector4 v;
         v.set(4.0, 5.0, 6.0, 7.0);
         REQUIRE( v.x == 4.0 );
@@ -68,7 +68,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 7.0 );
     }
     
-    SECTION("set array[4]") {
+    SUBCASE("set array[4]") {
         Vector4 v;
         double a[4] = {10.0, 20.0, 30.0, 40.0};
         v.set(a);
@@ -78,7 +78,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 40.0 );
     }
     
-    SECTION("set Vector3 and scalar") {
+    SUBCASE("set Vector3 and scalar") {
         Vector4 v;
         Vector3 v3(1.0, 2.0, 3.0);
         v.set(v3, 4.0);
@@ -88,7 +88,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
         REQUIRE( v.w == 4.0 );
     }
     
-    SECTION("copy") {
+    SUBCASE("copy") {
         Vector4 v0(9.0, 4.0, 2.0, 1.0);
         Vector4 v1;
         v1 = v0;
@@ -99,7 +99,7 @@ TEST_CASE("Vector4 construct and initialize", "[vector4]") {
     }
 }
 
-TEST_CASE("Vector4 get xyz", "[vector4]") {
+TEST_CASE("Vector4 get xyz [vector4]") {
     Vector4 v(9.0, 3.0, 3.0, 1.0);
     Vector3 xyz = v.getXYZ();
     REQUIRE( xyz.x == v.x );
@@ -107,13 +107,13 @@ TEST_CASE("Vector4 get xyz", "[vector4]") {
     REQUIRE( xyz.z == v.z );
 }
 
-TEST_CASE("Vector4 length", "[vector4]") {
+TEST_CASE("Vector4 length [vector4]") {
     Vector4 v(9.0, 3.0, 3.0, 1.0);
-    REQUIRE( v.length() == Approx(10.0).margin(kTestEPS) );
+    REQUIRE( v.length() == doctest::Approx(10.0).epsilon(kTestEPS) );
 }
 
-TEST_CASE("Vector4 is zero", "[vector4]") {
-    SECTION("perfect zero") {
+TEST_CASE("Vector4 is zero [vector4]") {
+    SUBCASE("perfect zero") {
         Vector4 v;
         v.set(0.0, 0.0, 0.0, 0.0);
         REQUIRE( v.isZero() );
@@ -121,7 +121,7 @@ TEST_CASE("Vector4 is zero", "[vector4]") {
         REQUIRE_FALSE( v.isZero() );
     }
     
-    SECTION("near zero") {
+    SUBCASE("near zero") {
         Vector4 v;
         v.set(1e-2, 1e-2, 1e-2, 1e-2);
         REQUIRE( v.isZero(1e-2 * 1.1) );
@@ -130,16 +130,16 @@ TEST_CASE("Vector4 is zero", "[vector4]") {
     }
 }
 
-TEST_CASE("Vector4 normalize", "[vector4]") {
+TEST_CASE("Vector4 normalize [vector4]") {
     Vector4 v(4.0, 5.0, 6.0, 7.0);
     REQUIRE( v.normalize() );
-    REQUIRE( v.length() == Approx(1.0).margin(kTestEPS) );
+    REQUIRE( v.length() == doctest::Approx(1.0).epsilon(kTestEPS) );
     
     v.set(0.0, 0.0, 0.0, 0.0);
     REQUIRE_FALSE( v.normalize() );
 }
 
-TEST_CASE("Vector4 negate", "[vector4]") {
+TEST_CASE("Vector4 negate [vector4]") {
     Vector4 v(1.0, -2.0, 3.0, -4.0);
     v.negate();
     REQUIRE( v.x == -1.0 );
@@ -148,7 +148,7 @@ TEST_CASE("Vector4 negate", "[vector4]") {
     REQUIRE( v.w == 4.0 );
 }
 
-TEST_CASE("Vector4 max component", "[vector4]") {
+TEST_CASE("Vector4 max component [vector4]") {
     Vector4 v;
     int i;
     
@@ -173,7 +173,7 @@ TEST_CASE("Vector4 max component", "[vector4]") {
     REQUIRE( i == linearalgebra::kW );
 }
 
-TEST_CASE("Vector4 min component", "[vector4]") {
+TEST_CASE("Vector4 min component [vector4]") {
     Vector4 v;
     int i;
     
@@ -198,17 +198,17 @@ TEST_CASE("Vector4 min component", "[vector4]") {
     REQUIRE( i == linearalgebra::kW );
 }
 
-TEST_CASE("Vector4 distance", "[vector4]") {
+TEST_CASE("Vector4 distance [vector4]") {
     Vector4 v0(1.0, 2.0, 3.0, 4.0);
     Vector4 v1(10.0, 5.0, 0.0, 3.0);
-    REQUIRE( Vector4::distance(v0, v1) == Approx(10.0).margin(kTestEPS) );
+    REQUIRE( Vector4::distance(v0, v1) == doctest::Approx(10.0).epsilon(kTestEPS) );
 }
 
-TEST_CASE("Vector4 normalized", "[vector4]") {
+TEST_CASE("Vector4 normalized [vector4]") {
     Vector4 v0(1.0, 2.0, 3.0, 4.0);
     Vector4 v = Vector4::normalized(v0);
     
-    REQUIRE( v.length() == Approx(1.0).margin(kTestEPS) );
+    REQUIRE( v.length() == doctest::Approx(1.0).epsilon(kTestEPS) );
     
     v0.normalize();
     REQUIRE( v.x == v0.x );
@@ -216,7 +216,7 @@ TEST_CASE("Vector4 normalized", "[vector4]") {
     REQUIRE( v.z == v0.z );
 }
 
-TEST_CASE("Vector4 negated", "[vector4]") {
+TEST_CASE("Vector4 negated [vector4]") {
     Vector4 v0(1.0, 2.0, 3.0, 4.0);
     Vector4 v = Vector4::negated(v0);
     
@@ -227,11 +227,11 @@ TEST_CASE("Vector4 negated", "[vector4]") {
     REQUIRE( v.w == v0.w );
 }
 
-TEST_CASE("Vector4 2 vector operation", "[vector4]") {
+TEST_CASE("Vector4 2 vector operation [vector4]") {
     Vector4 v0(3.0, 4.0, -9.0, 12.0);
     Vector4 v1(1.0, 2.0, 3.0, 4.0);
     
-    SECTION("multiply each component") {
+    SUBCASE("multiply each component") {
         Vector4 v = Vector4::mul(v0, v1);
         REQUIRE( v.x == 3.0 );
         REQUIRE( v.y == 8.0 );
@@ -239,7 +239,7 @@ TEST_CASE("Vector4 2 vector operation", "[vector4]") {
         REQUIRE( v.w == 48.0 );
     }
     
-    SECTION("divide each component") {
+    SUBCASE("divide each component") {
         Vector4 v = Vector4::div(v0, v1);
         REQUIRE( v.x == 3.0 );
         REQUIRE( v.y == 2.0 );
@@ -248,33 +248,33 @@ TEST_CASE("Vector4 2 vector operation", "[vector4]") {
     }
 }
 
-TEST_CASE("Vector4 dot product", "[vector4]") {
+TEST_CASE("Vector4 dot product [vector4]") {
     Vector4 v0(3.0, 4.0, -9.0, 1.0);
     Vector4 v1(1.0, 2.0, 3.0, 4.0);
-    REQUIRE( Vector4::dot(v0, v1) == Approx(-12.0).margin(kTestEPS) );
+    REQUIRE( Vector4::dot(v0, v1) == doctest::Approx(-12.0).epsilon(kTestEPS) );
 }
 
-TEST_CASE("Vector4 lerp", "[vector4]") {
+TEST_CASE("Vector4 lerp [vector4]") {
     Vector4 v = Vector4::lerp(Vector4(1.0, 2.0, 3.0, 4.0), Vector4(3.0, 4.0, 5.0, 2.0), 0.5);
-    REQUIRE( v.x == Approx(2.0).margin(kTestEPS) );
-    REQUIRE( v.y == Approx(3.0).margin(kTestEPS) );
-    REQUIRE( v.z == Approx(4.0).margin(kTestEPS) );
-    REQUIRE( v.w == Approx(3.0).margin(kTestEPS) );
+    REQUIRE( v.x == doctest::Approx(2.0).epsilon(kTestEPS) );
+    REQUIRE( v.y == doctest::Approx(3.0).epsilon(kTestEPS) );
+    REQUIRE( v.z == doctest::Approx(4.0).epsilon(kTestEPS) );
+    REQUIRE( v.w == doctest::Approx(3.0).epsilon(kTestEPS) );
 }
 
-TEST_CASE("Vector4 project", "[vector4]") {
+TEST_CASE("Vector4 project [vector4]") {
     Vector4 v = Vector4::project(Vector4(1.0, 2.0, 3.0, 4.0), Vector4(0.0, 3.0, 0.0, 0.0));
-    REQUIRE( v.x == Approx(0.0).margin(kTestEPS) );
-    REQUIRE( v.y == Approx(2.0).margin(kTestEPS) );
-    REQUIRE( v.z == Approx(0.0).margin(kTestEPS) );
-    REQUIRE( v.w == Approx(0.0).margin(kTestEPS) );
+    REQUIRE( v.x == doctest::Approx(0.0).epsilon(kTestEPS) );
+    REQUIRE( v.y == doctest::Approx(2.0).epsilon(kTestEPS) );
+    REQUIRE( v.z == doctest::Approx(0.0).epsilon(kTestEPS) );
+    REQUIRE( v.w == doctest::Approx(0.0).epsilon(kTestEPS) );
 }
 
-TEST_CASE("Vector4 operators", "[vector4]") {
+TEST_CASE("Vector4 operators [vector4]") {
     Vector4 v0(1.0, 2.0, 3.0, 4.0);
     Vector4 v1(-4.0, 5.0, 6.0, -7.0);
     
-    SECTION("addition") {
+    SUBCASE("addition") {
         Vector4 v = v0 + v1;
         REQUIRE( v.x == -3.0 );
         REQUIRE( v.y == 7.0 );
@@ -282,7 +282,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
         REQUIRE( v.w == -3.0 );
     }
     
-    SECTION("subtruct") {
+    SUBCASE("subtruct") {
         Vector4 v = v0 - v1;
         REQUIRE( v.x == 5.0 );
         REQUIRE( v.y == -3.0 );
@@ -290,7 +290,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
         REQUIRE( v.w == 11.0 );
     }
     
-    SECTION("multuply scalar") {
+    SUBCASE("multuply scalar") {
         Vector4 v = v0 * 2.0;
         REQUIRE( v.x == 2.0 );
         REQUIRE( v.y == 4.0 );
@@ -298,7 +298,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
         REQUIRE( v.w == 8.0 );
     }
     
-    SECTION("divide by scalar") {
+    SUBCASE("divide by scalar") {
         Vector4 v = v0 / 2.0;
         REQUIRE( v.x == 0.5 );
         REQUIRE( v.y == 1.0 );
@@ -306,7 +306,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
         REQUIRE( v.w == 2.0 );
     }
     
-    SECTION("addition and substitution") {
+    SUBCASE("addition and substitution") {
         Vector4 v = v0;
         v += v1;
         REQUIRE( v.x == -3.0 );
@@ -315,7 +315,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
         REQUIRE( v.w == -3.0 );
     }
     
-    SECTION("subtruct and substitution") {
+    SUBCASE("subtruct and substitution") {
         Vector4 v = v0;
         v -= v1;
         REQUIRE( v.x == 5.0 );
@@ -325,7 +325,7 @@ TEST_CASE("Vector4 operators", "[vector4]") {
     }
 }
 
-//TEST_CASE("Vector4 ", "[vector4]") {
+//TEST_CASE("Vector4 [vector4]") {
 //    Vector4 v();
 //    REQUIRE(  );
 //}

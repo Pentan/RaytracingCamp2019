@@ -38,12 +38,19 @@ set(PINKYAPP_TESTS_SRCS
 )
 source_group(appTests FILES ${PINKYAPP_TESTS_SRCS})
 
+set(THIRDPARTY_DOCTEST_DIR ${PINKYPI_THIRDPARTY_DIR}/doctest)
+set(THIRDPARTY_DOCTEST_SRCS
+    ${THIRDPARTY_DOCTEST_DIR}/doctest.h
+)
+source_group(doctest FILES ${THIRDPARTY_DOCTEST_SRCS})
+
 # exectable
 add_executable(PinkyPiTests
     testmain.cc
     testsupport.cc
     testsupport.h
     testconfig.h
+    ${THIRDPARTY_DOCTEST_SRCS}
     ${LINEARALGEBRA_TESTS_SRCS}
     ${PINKYCORE_TESTS_SRCS}
     ${PINKYAPP_TESTS_SRCS}
@@ -57,7 +64,7 @@ target_link_libraries(PinkyPiTests PRIVATE
 target_include_directories(PinkyPiTests PRIVATE
     ${PINKYPI_SOURCE_DIR}
     ${PINKYPI_THIRDPARTY_DIR}
-    ${PINKYPI_THIRDPARTY_DIR}/Catch2/single_include
+    ${THIRDPARTY_DOCTEST_DIR}
 )
 
 # source_group(linearalgebraTests REGULAR_EXPRESSION ${LINEARALGEBRA_TEST_DIR}/*)

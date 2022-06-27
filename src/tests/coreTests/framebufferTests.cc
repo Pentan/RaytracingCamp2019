@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <pinkycore/pptypes.h>
@@ -27,7 +27,7 @@ namespace {
     }
 }
 
-TEST_CASE("FrameBuffer basic test", "[FrameBuffer]") {
+TEST_CASE("FrameBuffer basic test [FrameBuffer]") {
     FrameBuffer fb(300, 250, 64);
     
     REQUIRE(fb.getTileCols() == (int)std::ceil((double)fb.getWidth() / fb.getTileSize()));

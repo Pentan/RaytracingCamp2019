@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <pinkycore/pptypes.h>
@@ -13,8 +13,8 @@ namespace {
     }
 }
 
-TEST_CASE("AABB basic test", "[AABB]") {
-    SECTION("construct with 2 scalar") {
+TEST_CASE("AABB basic test [AABB]") {
+    SUBCASE("construct with 2 scalar") {
         AABB aabb(1.0, 2.0);
         
         REQUIRE( aabb.min.x == 1.0 );
@@ -25,7 +25,7 @@ TEST_CASE("AABB basic test", "[AABB]") {
         REQUIRE( aabb.max.z == 2.0 );
     }
     
-    SECTION("construct with min and max") {
+    SUBCASE("construct with min and max") {
         AABB aabb(Vector3(-1.0, -2.0, -3.0), Vector3(1.0, 2.0, 3.0));
         
         REQUIRE( aabb.min.x == -1.0 );
@@ -36,7 +36,7 @@ TEST_CASE("AABB basic test", "[AABB]") {
         REQUIRE( aabb.max.z == 3.0 );
     }
     
-    SECTION("expand") {
+    SUBCASE("expand") {
         AABB aabb;
         
         aabb.expand(Vector3(1.0, 2.0, -4.0));
@@ -51,7 +51,7 @@ TEST_CASE("AABB basic test", "[AABB]") {
     }
 }
 
-TEST_CASE("AABB intersect") {
+TEST_CASE("AABB intersect [AABB]") {
     AABB aabb(Vector3(-1.0), Vector3(1.0));
     
     REQUIRE( IsHitRayAndAABB(aabb, Vector3(0.0, 0.0, 5.0), Vector3(0.0, 0.0, -1.0)) );

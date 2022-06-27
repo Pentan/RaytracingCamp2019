@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <linearalgebra/vector3.h>
@@ -29,22 +29,22 @@ namespace {
     REQUIRE( m.m33 == 1.0 );\
     }
 #define Matrix4RequireIdentityAprox(m, eps) {\
-    REQUIRE( m.m00 == Approx(1.0).margin(eps) );\
-    REQUIRE( m.m01 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m02 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m03 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m10 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m11 == Approx(1.0).margin(eps) );\
-    REQUIRE( m.m12 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m13 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m20 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m21 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m22 == Approx(1.0).margin(eps) );\
-    REQUIRE( m.m23 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m30 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m31 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m32 == Approx(0.0).margin(eps) );\
-    REQUIRE( m.m33 == Approx(1.0).margin(eps) );\
+    REQUIRE( m.m00 == doctest::Approx(1.0).epsilon(eps) );\
+    REQUIRE( m.m01 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m02 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m03 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m10 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m11 == doctest::Approx(1.0).epsilon(eps) );\
+    REQUIRE( m.m12 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m13 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m20 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m21 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m22 == doctest::Approx(1.0).epsilon(eps) );\
+    REQUIRE( m.m23 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m30 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m31 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m32 == doctest::Approx(0.0).epsilon(eps) );\
+    REQUIRE( m.m33 == doctest::Approx(1.0).epsilon(eps) );\
     }
 #define Matrix4RequireEqual(m, a) {\
     REQUIRE( m.m00 == a[0] );\
@@ -65,26 +65,26 @@ namespace {
     REQUIRE( m.m33 == a[15] );\
     }
 #define Matrix4RequireEqualAprox(m, a, eps) {\
-    REQUIRE( m.m00 == Approx(a[0]).margin(eps) );\
-    REQUIRE( m.m01 == Approx(a[1]).margin(eps) );\
-    REQUIRE( m.m02 == Approx(a[2]).margin(eps) );\
-    REQUIRE( m.m03 == Approx(a[3]).margin(eps) );\
-    REQUIRE( m.m10 == Approx(a[4]).margin(eps) );\
-    REQUIRE( m.m11 == Approx(a[5]).margin(eps) );\
-    REQUIRE( m.m12 == Approx(a[6]).margin(eps) );\
-    REQUIRE( m.m13 == Approx(a[7]).margin(eps) );\
-    REQUIRE( m.m20 == Approx(a[8]).margin(eps) );\
-    REQUIRE( m.m21 == Approx(a[9]).margin(eps) );\
-    REQUIRE( m.m22 == Approx(a[10]).margin(eps) );\
-    REQUIRE( m.m23 == Approx(a[11]).margin(eps) );\
-    REQUIRE( m.m30 == Approx(a[12]).margin(eps) );\
-    REQUIRE( m.m31 == Approx(a[13]).margin(eps) );\
-    REQUIRE( m.m32 == Approx(a[14]).margin(eps) );\
-    REQUIRE( m.m33 == Approx(a[15]).margin(eps) );\
+    REQUIRE( m.m00 == doctest::Approx(a[0]).epsilon(eps) );\
+    REQUIRE( m.m01 == doctest::Approx(a[1]).epsilon(eps) );\
+    REQUIRE( m.m02 == doctest::Approx(a[2]).epsilon(eps) );\
+    REQUIRE( m.m03 == doctest::Approx(a[3]).epsilon(eps) );\
+    REQUIRE( m.m10 == doctest::Approx(a[4]).epsilon(eps) );\
+    REQUIRE( m.m11 == doctest::Approx(a[5]).epsilon(eps) );\
+    REQUIRE( m.m12 == doctest::Approx(a[6]).epsilon(eps) );\
+    REQUIRE( m.m13 == doctest::Approx(a[7]).epsilon(eps) );\
+    REQUIRE( m.m20 == doctest::Approx(a[8]).epsilon(eps) );\
+    REQUIRE( m.m21 == doctest::Approx(a[9]).epsilon(eps) );\
+    REQUIRE( m.m22 == doctest::Approx(a[10]).epsilon(eps) );\
+    REQUIRE( m.m23 == doctest::Approx(a[11]).epsilon(eps) );\
+    REQUIRE( m.m30 == doctest::Approx(a[12]).epsilon(eps) );\
+    REQUIRE( m.m31 == doctest::Approx(a[13]).epsilon(eps) );\
+    REQUIRE( m.m32 == doctest::Approx(a[14]).epsilon(eps) );\
+    REQUIRE( m.m33 == doctest::Approx(a[15]).epsilon(eps) );\
     }
 }
 
-TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
+TEST_CASE("Matrix4 construct and initialize [Matrix4]") {
     double a[16] = {
         1.0, 2.0, 3.0, 4.0,
         5.0, 6.0, 7.0, 8.0,
@@ -92,12 +92,12 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         13.0, 14.0, 15.0, 16.0
     };
     
-    SECTION("implicit constructor") {
+    SUBCASE("implicit constructor") {
         Matrix4 m;
         Matrix4RequireIdentity(m);
     }
     
-    SECTION("construct with args") {
+    SUBCASE("construct with args") {
         Matrix4 m(
             1.0, 2.0, 3.0, 4.0,
             5.0, 6.0, 7.0, 8.0,
@@ -122,12 +122,12 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         REQUIRE( m.m33 == 16.0 );
     }
     
-    SECTION("construct with array") {
+    SUBCASE("construct with array") {
         Matrix4 m(a);
         Matrix4RequireEqual(m, a);
     }
     
-    SECTION("set args") {
+    SUBCASE("set args") {
         Matrix4 m;
         Matrix4RequireIdentity(m);
         
@@ -155,7 +155,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         REQUIRE( m.m33 == 16.0 );
     }
     
-    SECTION("set array") {
+    SUBCASE("set array") {
         Matrix4 m;
         Matrix4RequireIdentity(m);
         
@@ -163,7 +163,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqual(m, a);
     }
     
-    SECTION("set columns") {
+    SUBCASE("set columns") {
         Vector4 c0(a[0], a[1], a[2], a[3]);
         Vector4 c1(a[4], a[5], a[6], a[7]);
         Vector4 c2(a[8], a[9], a[10], a[11]);
@@ -174,7 +174,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqual(m, a);
     }
     
-    SECTION("set rows") {
+    SUBCASE("set rows") {
         Vector4 r0(a[0], a[4], a[8], a[12]);
         Vector4 r1(a[1], a[5], a[9], a[13]);
         Vector4 r2(a[2], a[6], a[10], a[14]);
@@ -185,13 +185,13 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqual(m, a);
     }
     
-    SECTION("set identity") {
+    SUBCASE("set identity") {
         Matrix4 m(a);
         m.setIdentity();
         Matrix4RequireIdentity(m);
     }
     
-    SECTION("set translation") {
+    SUBCASE("set translation") {
         Matrix4 m;
         m.setTranslation(1.0, 2.0, 3.0);
         
@@ -204,7 +204,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqual(m, t);
     }
     
-    SECTION("set rotation") {
+    SUBCASE("set rotation") {
         double angle = M_PI * 30.0 / 180.0;
         Matrix4 m;
         
@@ -236,7 +236,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqualAprox(m, rz, kTestEPS);
     }
     
-    SECTION("set scale") {
+    SUBCASE("set scale") {
         Matrix4 m;
         m.setScale(2.0, 4.0, 6.0);
         double s[16] = {
@@ -248,7 +248,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
         Matrix4RequireEqual(m, s);
     }
     
-    SECTION("set basis") {
+    SUBCASE("set basis") {
         Vector3 vx(1.0, 2.0, 3.0);
         Vector3 vy(4.0, 5.0, 6.0);
         Vector3 vz(7.0, 8.0, 9.0);
@@ -265,7 +265,7 @@ TEST_CASE("Matrix4 construct and initialize", "[Matrix4]") {
     }
 }
 
-TEST_CASE("Matrix4 column and row", "[Matrix4]") {
+TEST_CASE("Matrix4 column and row [Matrix4]") {
     Matrix4 m(
         1.0, 2.0, 3.0, 4.0,
         5.0, 6.0, 7.0, 8.0,
@@ -273,7 +273,7 @@ TEST_CASE("Matrix4 column and row", "[Matrix4]") {
         13.0, 14.0, 15.0, 16.0
     );
     
-    SECTION("get column") {
+    SUBCASE("get column") {
         Vector4 c;
         c = m.getColumn(0);
         REQUIRE( c.x == 1.0 );
@@ -300,7 +300,7 @@ TEST_CASE("Matrix4 column and row", "[Matrix4]") {
         REQUIRE( c.w == 16.0 );
     }
     
-    SECTION("set column") {
+    SUBCASE("set column") {
         Matrix4 n;
         n.setColumn(0, Vector4(1.0, 2.0, 3.0, 4.0));
         n.setColumn(1, Vector4(5.0, 6.0, 7.0, 8.0));
@@ -315,7 +315,7 @@ TEST_CASE("Matrix4 column and row", "[Matrix4]") {
         Matrix4RequireEqual(n, a);
     }
     
-    SECTION("get row") {
+    SUBCASE("get row") {
         Vector4 c;
         c = m.getRow(0);
         REQUIRE( c.x == 1.0 );
@@ -342,7 +342,7 @@ TEST_CASE("Matrix4 column and row", "[Matrix4]") {
         REQUIRE( c.w == 16.0 );
     }
     
-    SECTION("set row") {
+    SUBCASE("set row") {
         Matrix4 n;
         n.setRow(0, Vector4(1.0, 2.0, 3.0, 4.0));
         n.setRow(1, Vector4(5.0, 6.0, 7.0, 8.0));
@@ -358,7 +358,7 @@ TEST_CASE("Matrix4 column and row", "[Matrix4]") {
     }
 }
 
-TEST_CASE("Matrix4 invert", "[Matrix4]") {
+TEST_CASE("Matrix4 invert [Matrix4]") {
     Matrix4 m0(
         1.0, 2.0, 3.0, 4.0,
         8.0, 6.0, 3.0, 8.0,
@@ -372,7 +372,7 @@ TEST_CASE("Matrix4 invert", "[Matrix4]") {
     Matrix4RequireIdentityAprox(m, kTestEPS);
 }
 
-TEST_CASE("Matrix4 transpose", "[Matrix4]") {
+TEST_CASE("Matrix4 transpose [Matrix4]") {
     Matrix4 m(
         1.0, 2.0, 3.0, 4.0,
         5.0, 6.0, 7.0, 8.0,
@@ -390,8 +390,8 @@ TEST_CASE("Matrix4 transpose", "[Matrix4]") {
     Matrix4RequireEqual(m, a);
 }
 
-TEST_CASE("Matrix4 transforms", "[Matrix4]") {
-    SECTION("translate") {
+TEST_CASE("Matrix4 transforms [Matrix4]") {
+    SUBCASE("translate") {
         Matrix4 m;
         m.translate(1.0, 2.0, 3.0);
         REQUIRE( m.m30 == 1.0 );
@@ -403,18 +403,18 @@ TEST_CASE("Matrix4 transforms", "[Matrix4]") {
         Matrix4RequireIdentity(m);
     }
     
-    SECTION("rotate") {
+    SUBCASE("rotate") {
         Matrix4 m;
         double isqrt2 = 1.0 / M_SQRT2;
         m.rotate(M_PI * 0.5, -isqrt2, 0.0, isqrt2);
         Vector3 v(isqrt2, 0.0, isqrt2);
         v = Matrix4::transformV3(m, v);
-        REQUIRE( v.x == Approx(0.0).margin(kTestEPS) );
-        REQUIRE( v.y == Approx(1.0).margin(kTestEPS) );
-        REQUIRE( v.z == Approx(0.0).margin(kTestEPS) );
+        REQUIRE( v.x == doctest::Approx(0.0).epsilon(kTestEPS) );
+        REQUIRE( v.y == doctest::Approx(1.0).epsilon(kTestEPS) );
+        REQUIRE( v.z == doctest::Approx(0.0).epsilon(kTestEPS) );
     }
     
-    SECTION("scale") {
+    SUBCASE("scale") {
         Matrix4 m;
         m.scale(0.5, 2.0, 0.25);
         REQUIRE( m.m00 == 0.5 );
@@ -427,58 +427,58 @@ TEST_CASE("Matrix4 transforms", "[Matrix4]") {
     }
 }
 
-//TEST_CASE("view matrix", "[Matrix4]") {
-//    SECTION("ortho") {
+//TEST_CASE("view matrix [Matrix4]") {
+//    SUBCASE("ortho") {
 //        // TODO
 //    }
 //
-//    SECTION("frustum") {
+//    SUBCASE("frustum") {
 //        // TODO
 //    }
 //
-//    SECTION("perspective") {
+//    SUBCASE("perspective") {
 //        // TODO
 //    }
 //
-//    SECTION("look at") {
+//    SUBCASE("look at") {
 //        // TODO
 //    }
 //}
 
 TEST_CASE("MAtrix4 with Vector") {
-    SECTION("with Vector3") {
+    SUBCASE("with Vector3") {
         Matrix4 m = Matrix4::makeTranslation(1.0, 2.0, 3.0);
         m.rotate(M_PI * 0.5, 0.0, 1.0, 0.0);
         Vector3 v;
         
         v = Matrix4::transformV3(m, Vector3(1.0, 2.0, 3.0));
-        REQUIRE( v.x == Approx(4.0).margin(kTestEPS) );
-        REQUIRE( v.y == Approx(4.0).margin(kTestEPS) );
-        REQUIRE( v.z == Approx(2.0).margin(kTestEPS) );
+        REQUIRE( v.x == doctest::Approx(4.0).epsilon(kTestEPS) );
+        REQUIRE( v.y == doctest::Approx(4.0).epsilon(kTestEPS) );
+        REQUIRE( v.z == doctest::Approx(2.0).epsilon(kTestEPS) );
         
         v = Matrix4::mulV3(m, Vector3(1.0, 2.0, 3.0));
-        REQUIRE( v.x == Approx(3.0).margin(kTestEPS) );
-        REQUIRE( v.y == Approx(2.0).margin(kTestEPS) );
-        REQUIRE( v.z == Approx(-1.0).margin(kTestEPS) );
+        REQUIRE( v.x == doctest::Approx(3.0).epsilon(kTestEPS) );
+        REQUIRE( v.y == doctest::Approx(2.0).epsilon(kTestEPS) );
+        REQUIRE( v.z == doctest::Approx(-1.0).epsilon(kTestEPS) );
         
         // This is not a suitable test.
         v = Matrix4::mulAndProjectV3(m, Vector3(1.0, 2.0, 3.0));
-        REQUIRE( v.x == Approx(4.0).margin(kTestEPS) );
-        REQUIRE( v.y == Approx(4.0).margin(kTestEPS) );
-        REQUIRE( v.z == Approx(2.0).margin(kTestEPS) );
+        REQUIRE( v.x == doctest::Approx(4.0).epsilon(kTestEPS) );
+        REQUIRE( v.y == doctest::Approx(4.0).epsilon(kTestEPS) );
+        REQUIRE( v.z == doctest::Approx(2.0).epsilon(kTestEPS) );
     }
     
-    SECTION("with Vector4") {
+    SUBCASE("with Vector4") {
         Matrix4 m = Matrix4::makeTranslation(1.0, 2.0, 3.0);
         Vector4 v = Matrix4::mulV4(m, Vector4(1.0, 2.0, 3.0, 4.0));
-        REQUIRE( v.x == Approx(5.0).margin(kTestEPS) );
-        REQUIRE( v.y == Approx(10.0).margin(kTestEPS) );
-        REQUIRE( v.z == Approx(15.0).margin(kTestEPS) );
-        REQUIRE( v.w == Approx(4.0).margin(kTestEPS) );
+        REQUIRE( v.x == doctest::Approx(5.0).epsilon(kTestEPS) );
+        REQUIRE( v.y == doctest::Approx(10.0).epsilon(kTestEPS) );
+        REQUIRE( v.z == doctest::Approx(15.0).epsilon(kTestEPS) );
+        REQUIRE( v.w == doctest::Approx(4.0).epsilon(kTestEPS) );
     }
 }
 
-TEST_CASE("Matrix4 operators", "[Matrix4]") {
+TEST_CASE("Matrix4 operators [Matrix4]") {
     Matrix4 m0(
         1.0, 2.0, 3.0, 4.0,
         5.0, 6.0, 7.0, 8.0,
@@ -492,7 +492,7 @@ TEST_CASE("Matrix4 operators", "[Matrix4]") {
         4.0, 8.0, 9.0, 1.0
     );
     
-    SECTION("additive") {
+    SUBCASE("additive") {
         Matrix4 m = m0 + m1;
         double a[16] = {
             2.0, 4.0, 6.0, 8.0,
@@ -503,7 +503,7 @@ TEST_CASE("Matrix4 operators", "[Matrix4]") {
         Matrix4RequireEqualAprox(m, a, kTestEPS);
     }
     
-    SECTION("subtruct") {
+    SUBCASE("subtruct") {
         Matrix4 m = m0 - m1;
         double a[16] = {
             0.0, 0.0, 0.0, 0.0,
@@ -514,7 +514,7 @@ TEST_CASE("Matrix4 operators", "[Matrix4]") {
         Matrix4RequireEqualAprox(m, a, kTestEPS);
     }
     
-    SECTION("multiply") {
+    SUBCASE("multiply") {
         Matrix4 m = m0 * m1;
         double a[16] = {
             90.0, 100.0, 110.0, 120.0,
@@ -525,7 +525,7 @@ TEST_CASE("Matrix4 operators", "[Matrix4]") {
         Matrix4RequireEqualAprox(m, a, kTestEPS);
     }
     
-    SECTION("multiply scalar") {
+    SUBCASE("multiply scalar") {
         Matrix4 m = m0 * 2.0;
         double a[16] = {
             2.0, 4.0, 6.0, 8.0,

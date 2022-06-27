@@ -2,7 +2,7 @@
 #include <sstream>
 #include <fstream>
 
-#include <catch2/catch.hpp>
+#include <doctest.h>
 #include "../testsupport.h"
 
 #include <pinkycore/pptypes.h>
@@ -10,7 +10,7 @@
 
 using namespace PinkyPi;
 
-TEST_CASE("Random test", "[Random]") {
+TEST_CASE("Random test [Random]") {
     bool writelog = true;
     
     std::stringstream ss;
@@ -25,7 +25,7 @@ TEST_CASE("Random test", "[Random]") {
     
     const int kNUMGEN = 1000;
     
-//    SECTION("generate integer")
+//    SUBCASE("generate integer")
     {
         Random rng(time(NULL));
         
@@ -44,7 +44,7 @@ TEST_CASE("Random test", "[Random]") {
         fs << "\n";
     }
     
-//    SECTION("generate float [0,1]")
+//    SUBCASE("generate float [0,1]")
     {
         Random rng(time(NULL));
         
@@ -64,7 +64,7 @@ TEST_CASE("Random test", "[Random]") {
         fs << "\n";
     }
     
-//    SECTION("generate float [0,1)")
+//    SUBCASE("generate float [0,1)")
     {
         Random rng(time(NULL));
         
@@ -84,7 +84,7 @@ TEST_CASE("Random test", "[Random]") {
         fs << "\n";
     }
     
-//    SECTION("generate float (0,1)")
+//    SUBCASE("generate float (0,1)")
     {
         Random rng(time(NULL));
         
