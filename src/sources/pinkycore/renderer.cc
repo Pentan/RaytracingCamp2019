@@ -1,3 +1,4 @@
+#include <ctime>
 #include "renderer.h"
 #include "config.h"
 #include "scene.h"
