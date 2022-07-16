@@ -12,18 +12,20 @@
 
 using namespace PinkyPi;
 
+namespace {
+    std::string KhronosGlTFSampleModelPath(std::string name) {
+        std::stringstream ss;
+        ss <<  PINKYPI_TEST_DATA_DIR;
+        ss << "/glTF-Sample-Models/2.0/";
+        ss << name << "/glTF/";
+        ss << name << ".gltf";
+        return ss.str();
+    }
+}
+
 TEST_CASE("Scene loader test [SceneLoader]") {
-    std::string basedir = "/models";
-//    std::string filename = "/BoxTexturedNonPowerOfTwo/glTF/BoxTexturedNonPowerOfTwo.gltf";
-//    std::string filename = "/Lantern/glTF/Lantern.gltf";
-    std::string filename = "/BlenderExport/box01.gltf";
-    
-    std::stringstream ss;
-    ss <<  PINKYPI_TEST_DATA_DIR << basedir << filename;
-    std::string gltfpath = ss.str();
-    
+    std::string gltfpath = KhronosGlTFSampleModelPath("Box");
     AssetLibrary *assetlib = SceneLoader::load(gltfpath);
     Scene *scene = assetlib->getDefaultScene();
-    
     REQUIRE(scene != nullptr);
 }
