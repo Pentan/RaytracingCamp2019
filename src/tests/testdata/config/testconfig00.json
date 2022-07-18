@@ -1,0 +1,19 @@
+{
+	"width": 1280,
+    "height": 720,
+    "frames": 30,
+    "framesPerSecond": 29.9,
+    "samplesPerPixel": 16,
+    "pixelSubSamples": 4,
+    "minDepth": 2,
+    "maxDepth": 8,
+    "minRussianRouletteCutOff": 0.05,
+    "tileSize": 256,
+    "scrambleTile": false,
+    "limitSec": 300.0,
+    "progressIntervalSec": 2.0,
+    "quietProgress": true,
+    "waitUntilFinish": false,
+    "inputFile": "testinput.gltf",
+    "outputFile": "testoutput.jpg"
+}
