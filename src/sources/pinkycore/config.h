@@ -9,10 +9,13 @@ namespace PinkyPi {
     public:
         int width;
         int height;
-
+        
+        int frames;
+        double framesPerSecond;
+        
         int samplesPerPixel;
         int pixelSubSamples;
-
+        
         int minDepth;
         int maxDepth;
         float minRussianRouletteCutOff;
@@ -33,6 +36,8 @@ namespace PinkyPi {
         Config():
             width(320),
             height(270),
+            frames(1),
+            framesPerSecond(30.0),
             samplesPerPixel(4),
             pixelSubSamples(2),
             minDepth(1),

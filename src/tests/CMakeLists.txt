@@ -28,6 +28,7 @@ set(PINKYCORE_TESTS_SRCS
     ${PINKYCORE_TEST_DIR}/aabbTests.cc
     ${PINKYCORE_TEST_DIR}/framebufferTests.cc
     ${PINKYCORE_TEST_DIR}/randomTests.cc
+    ${PINKYCORE_TEST_DIR}/configTests.cc
 )
 source_group(coreTests FILES ${PINKYCORE_TESTS_SRCS})
 
