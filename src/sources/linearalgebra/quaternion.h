@@ -4,12 +4,16 @@
 #include <cstdio>
 #include <cmath>
 #include <algorithm>
+
 #include "constants.h"
+#include "vector3.h"
+#include "matrix4.h"
 
 namespace linearalgebra {
     
     template<typename FPType> union Quaternion {
         struct {FPType x, y, z, w;};
+        struct {FPType i, j, k, s;};
         FPType q[4];
         
         // constructors
@@ -21,12 +25,13 @@ namespace linearalgebra {
         inline void set(const FPType iv[4]);
         
         inline bool normalize(void);
-        inline void negate(void);
+        inline void inverse(void);
         inline void conjugate(void);
         
         inline Matrix4<FPType> getMatrix(void) const;
         
         inline bool hasRotation(void) const;
+        inline Vector3<FPType> rotate(const Vector3<FPType> v);
         
         // utility
         static inline Quaternion makeRotation(const FPType rad, const FPType ax, const FPType ay, const FPType az);
@@ -34,7 +39,7 @@ namespace linearalgebra {
         static void sprint(char *buf, const Quaternion q);
         
         static inline Quaternion normalized(const Quaternion q);
-        static inline Quaternion negated(const Quaternion q);
+        static inline Quaternion inversed(const Quaternion q);
         static inline Quaternion conjugated(const Quaternion q);
         
         // 2 quaternion operations
@@ -46,10 +51,15 @@ namespace linearalgebra {
         inline Quaternion operator-(const Quaternion &b) const;
         inline Quaternion operator*(const Quaternion &b) const;
         inline Quaternion operator/(const Quaternion &b) const;
+        inline Quaternion operator*(const FPType s) const;
+        inline Quaternion operator/(const FPType s) const;
         
         inline Quaternion operator+=(const Quaternion &b);
         inline Quaternion operator-=(const Quaternion &b);
     };
+
+    template<typename FPType> inline const Quaternion<FPType> operator*(const FPType s, const Quaternion<FPType> &q);
+    template<typename FPType> inline const Quaternion<FPType> operator/(const FPType s, const Quaternion<FPType> &q);
 }
 // implementation
 #include "quaternion.inl"

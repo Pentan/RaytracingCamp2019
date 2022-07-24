@@ -33,11 +33,13 @@ namespace linearalgebra {
     }
     
     template<typename FPType>
-    inline void Quaternion<FPType>::negate(void) {
-        x = -1.0;
-        y = -1.0;
-        z = -1.0;
-        w = -1.0;
+    inline void Quaternion<FPType>::inverse(void) {
+        FPType n = x * x + y * y + z * z + w * w;
+        if (n < kEPS) return;
+        x /= -n;
+        y /= -n;
+        z /= -n;
+        w /= n;
     }
     
     template<typename FPType>
@@ -78,6 +80,12 @@ namespace linearalgebra {
     inline bool Quaternion<FPType>::hasRotation(void) const {
         return (x == 0.0) && (y == 0.0) && (z == 0.0) && (w == 1.0);
     }
+
+    template<typename FPType>
+    inline Vector3<FPType> Quaternion<FPType>::rotate(const Vector3<FPType> v) {
+        Quaternion ret = *this * vq(v.x, v.y, v.z, 0.0) * Quaternion::conjugated(*this);
+        return Vector3<FPType>(ret.x, ret.y, ret.z);
+    }
     
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::makeRotation(const FPType rad, const FPType ax, const FPType ay, const FPType az) {
@@ -93,7 +101,6 @@ namespace linearalgebra {
         return q;
     }
     
-    
     template<typename FPType>
     void Quaternion<FPType>::sprint(char *buf, const Quaternion<FPType> q) {
         sprintf(buf, "quat(%.4lf,%.4lf,%.4lf,%.4lf)", (double)q.x, (double)q.y, (double)q.z, (double)q.w);
@@ -107,9 +114,9 @@ namespace linearalgebra {
     }
     
     template<typename FPType>
-    inline Quaternion<FPType> Quaternion<FPType>::negated(const Quaternion<FPType> q) {
+    inline Quaternion<FPType> Quaternion<FPType>::inversed(const Quaternion<FPType> q) {
         Quaternion<FPType> ret = q;
-        q.negate();
+        q.inverse();
         return q;
     }
     
@@ -127,19 +134,26 @@ namespace linearalgebra {
         q.x = q0.x * t0 + q1.x * t;
         q.y = q0.y * t0 + q1.y * t;
         q.z = q0.z * t0 + q1.z * t;
-        q.z = q0.w * t0 + q1.w * t;
+        q.w = q0.w * t0 + q1.w * t;
         return q;
     }
     
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::slerp(const Quaternion<FPType> q0, const Quaternion<FPType> q1, const FPType t) {
         Quaternion<FPType> q;
-        FPType t0 = 1.0 - t;
-        // FIXME
-//        q.x = q0.x * t0 + q1.x * t;
-//        q.y = q0.y * t0 + q1.y * t;
-//        q.z = q0.z * t0 + q1.z * t;
-//        q.z = q0.w * t0 + q1.w * t;
+        FPType cosphi = std::max(0.0, std::min(1.0, q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w));
+        FPType sinphi = 1.0 - cosphi * cosphi;
+        if (sinphi < kEPS) {
+            return q0;
+        }
+        sinphi = sqrt(sinphi);
+        FPType phi = acos(cosphi);
+        FPType t0 = sin(phi * (1.0 - t)) / sinphi;
+        FPType t1 = sin(phi * t) / sinphi;
+        q.x = q0.x * t0 + q1.x * t1;
+        q.y = q0.y * t0 + q1.y * t1;
+        q.z = q0.z * t0 + q1.z * t1;
+        q.w = q0.w * t0 + q1.w * t1;
         return q;
     }
     
@@ -147,23 +161,35 @@ namespace linearalgebra {
     inline Quaternion<FPType> Quaternion<FPType>::operator+(const Quaternion<FPType> &b) const {
         return Quaternion(x + b.x, y + b.y, z + b.z, w + b.w);
     }
+
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::operator-(const Quaternion<FPType> &b) const {
         return Quaternion(x - b.x, y - b.y, z - b.z, w - b.w);
     }
+
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::operator*(const Quaternion<FPType> &b) const {
-        // FIXME
         Quaternion q;
-//        q.x = ;
-//        q.y = ;
-//        q.z = ;
-//        q.w = ;
+        q.x = w * b.x + x * b.w + y * b.z - z * b.y;
+        q.y = w * b.y - x * b.z + y * b.w + z * b.x;
+        q.z = w * b.z + x * b.y - y * b.x + z * b.w;
+        q.w = w * b.w - x * b.x - y * b.y - z * b.z;
         return q;
     }
+
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::operator/(const Quaternion<FPType> &b) const {
-        return *this * Quaternion<FPType>::negated(b);
+        return *this * Quaternion<FPType>::inversed(b);
+    }
+
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator*(const FPType s) const {
+        return Quaternion(x * s, y * s, z * s, w * s);
+    }
+
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator/(const FPType s) const {
+        return Quaternion(x / s, y / s, z / s, w / s);
     }
     
     template<typename FPType>
@@ -183,6 +209,16 @@ namespace linearalgebra {
         w -= b.w;
         return *this;
     }
+
+    template<typename FPType>
+    inline const Quaternion<FPType> operator*(const FPType s, const Quaternion<FPType> &q) {
+        return q * s;
+    }
+    template<typename FPType>
+    inline const Quaternion<FPType> operator/(const FPType s, const Quaternion<FPType> &q) {
+        return q / s;
+    }
+
 }
 
 #endif

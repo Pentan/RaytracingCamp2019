@@ -19,6 +19,7 @@ set(LINEARALGEBRA_TESTS_SRCS
     ${LINEARALGEBRA_TEST_DIR}/Vector3Tests.cc
     ${LINEARALGEBRA_TEST_DIR}/Vector4Tests.cc
     ${LINEARALGEBRA_TEST_DIR}/Matrix4Tests.cc
+    ${LINEARALGEBRA_TEST_DIR}/QuaternionTests.cc
 )
 source_group(linearalgebraTests FILES ${LINEARALGEBRA_TESTS_SRCS})
 
