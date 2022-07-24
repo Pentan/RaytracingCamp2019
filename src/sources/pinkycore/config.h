@@ -13,6 +13,8 @@ namespace PinkyPi {
         int frames;
         double framesPerSecond;
         
+        double exposureSecond;
+        
         int samplesPerPixel;
         int pixelSubSamples;
         
