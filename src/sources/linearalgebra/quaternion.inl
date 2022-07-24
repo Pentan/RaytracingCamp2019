@@ -33,6 +33,21 @@ namespace linearalgebra {
     }
     
     template<typename FPType>
+    inline void Quaternion<FPType>::negate(void) {
+        x = -1.0;
+        y = -1.0;
+        z = -1.0;
+        w = -1.0;
+    }
+    
+    template<typename FPType>
+    inline void Quaternion<FPType>::conjugate(void) {
+        x = -1.0;
+        y = -1.0;
+        z = -1.0;
+    }
+    
+    template<typename FPType>
     inline Matrix4<FPType> Quaternion<FPType>::getMatrix(void) const {
         Matrix4<FPType> m;
         
@@ -76,6 +91,97 @@ namespace linearalgebra {
         q.w = c;
         
         return q;
+    }
+    
+    
+    template<typename FPType>
+    void Quaternion<FPType>::sprint(char *buf, const Quaternion<FPType> q) {
+        sprintf(buf, "quat(%.4lf,%.4lf,%.4lf,%.4lf)", (double)q.x, (double)q.y, (double)q.z, (double)q.w);
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::normalized(const Quaternion<FPType> q) {
+        Quaternion<FPType> ret = q;
+        q.normalize();
+        return q;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::negated(const Quaternion<FPType> q) {
+        Quaternion<FPType> ret = q;
+        q.negate();
+        return q;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::conjugated(const Quaternion<FPType> q) {
+        Quaternion<FPType> ret = q;
+        q.conjugate();
+        return q;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::lerp(const Quaternion<FPType> q0, const Quaternion<FPType> q1, const FPType t) {
+        Quaternion<FPType> q;
+        FPType t0 = 1.0 - t;
+        q.x = q0.x * t0 + q1.x * t;
+        q.y = q0.y * t0 + q1.y * t;
+        q.z = q0.z * t0 + q1.z * t;
+        q.z = q0.w * t0 + q1.w * t;
+        return q;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::slerp(const Quaternion<FPType> q0, const Quaternion<FPType> q1, const FPType t) {
+        Quaternion<FPType> q;
+        FPType t0 = 1.0 - t;
+        // FIXME
+//        q.x = q0.x * t0 + q1.x * t;
+//        q.y = q0.y * t0 + q1.y * t;
+//        q.z = q0.z * t0 + q1.z * t;
+//        q.z = q0.w * t0 + q1.w * t;
+        return q;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator+(const Quaternion<FPType> &b) const {
+        return Quaternion(x + b.x, y + b.y, z + b.z, w + b.w);
+    }
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator-(const Quaternion<FPType> &b) const {
+        return Quaternion(x - b.x, y - b.y, z - b.z, w - b.w);
+    }
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator*(const Quaternion<FPType> &b) const {
+        // FIXME
+        Quaternion q;
+//        q.x = ;
+//        q.y = ;
+//        q.z = ;
+//        q.w = ;
+        return q;
+    }
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator/(const Quaternion<FPType> &b) const {
+        return *this * Quaternion<FPType>::negated(b);
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator+=(const Quaternion<FPType> &b) {
+        x += b.x;
+        y += b.y;
+        z += b.z;
+        w += b.w;
+        return *this;
+    }
+    
+    template<typename FPType>
+    inline Quaternion<FPType> Quaternion<FPType>::operator-=(const Quaternion<FPType> &b) {
+        x -= b.x;
+        y -= b.y;
+        z -= b.z;
+        w -= b.w;
+        return *this;
     }
 }
 

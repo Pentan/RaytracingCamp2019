@@ -12,19 +12,43 @@ namespace linearalgebra {
         struct {FPType x, y, z, w;};
         FPType q[4];
         
+        // constructors
         Quaternion(): x(0.0), y(0.0), z(0.0), w(1.0) {}
         Quaternion(const FPType ix, const FPType iy, const FPType iz, const FPType iw): x(ix), y(iy), z(iz), w(iw) {}
         
+        // self operation
         inline void set(const FPType ix, const FPType iy, const FPType iz, const FPType iw);
         inline void set(const FPType iv[4]);
         
         inline bool normalize(void);
+        inline void negate(void);
+        inline void conjugate(void);
         
         inline Matrix4<FPType> getMatrix(void) const;
         
         inline bool hasRotation(void) const;
         
+        // utility
         static inline Quaternion makeRotation(const FPType rad, const FPType ax, const FPType ay, const FPType az);
+        
+        static void sprint(char *buf, const Quaternion q);
+        
+        static inline Quaternion normalized(const Quaternion q);
+        static inline Quaternion negated(const Quaternion q);
+        static inline Quaternion conjugated(const Quaternion q);
+        
+        // 2 quaternion operations
+        static inline Quaternion lerp(const Quaternion q0, const Quaternion q1, const FPType t);
+        static inline Quaternion slerp(const Quaternion q0, const Quaternion q1, const FPType t);
+        
+        // operators
+        inline Quaternion operator+(const Quaternion &b) const;
+        inline Quaternion operator-(const Quaternion &b) const;
+        inline Quaternion operator*(const Quaternion &b) const;
+        inline Quaternion operator/(const Quaternion &b) const;
+        
+        inline Quaternion operator+=(const Quaternion &b);
+        inline Quaternion operator-=(const Quaternion &b);
     };
 }
 // implementation
