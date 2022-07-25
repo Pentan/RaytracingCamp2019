@@ -24,6 +24,8 @@ namespace linearalgebra {
         inline void set(const FPType ix, const FPType iy, const FPType iz, const FPType iw);
         inline void set(const FPType iv[4]);
         
+        inline FPType norm(void);
+
         inline bool normalize(void);
         inline void inverse(void);
         inline void conjugate(void);

@@ -18,15 +18,21 @@ namespace linearalgebra {
         z = iv[2];
         w = iv[3];
     }
+
+    template<typename FPType>
+    inline FPType Quaternion<FPType>::norm(void) {
+        return sqrt(x * x + y * y + z * z + w * w);
+    }
     
     template<typename FPType>
     inline bool Quaternion<FPType>::normalize(void) {
-        FPType l = x * x + y * y + z * z;
-        if(l > kEPS) {
-            l = 1.0 / sqrt(l);
-            x *= l;
-            y *= l;
-            z *= l;
+        FPType n = this->norm();
+        if(n > kEPS) {
+            n = 1.0 / n;
+            x *= n;
+            y *= n;
+            z *= n;
+            w *= n;
             return true;
         }
         return false;
@@ -36,17 +42,18 @@ namespace linearalgebra {
     inline void Quaternion<FPType>::inverse(void) {
         FPType n = x * x + y * y + z * z + w * w;
         if (n < kEPS) return;
-        x /= -n;
-        y /= -n;
-        z /= -n;
-        w /= n;
+        n = 1.0 / n;
+        x *= -n;
+        y *= -n;
+        z *= -n;
+        w *= n;
     }
     
     template<typename FPType>
     inline void Quaternion<FPType>::conjugate(void) {
-        x = -1.0;
-        y = -1.0;
-        z = -1.0;
+        x *= -1.0;
+        y *= -1.0;
+        z *= -1.0;
     }
     
     template<typename FPType>
@@ -83,7 +90,7 @@ namespace linearalgebra {
 
     template<typename FPType>
     inline Vector3<FPType> Quaternion<FPType>::rotate(const Vector3<FPType> v) {
-        Quaternion ret = *this * vq(v.x, v.y, v.z, 0.0) * Quaternion::conjugated(*this);
+        Quaternion ret = *this * Quaternion(v.x, v.y, v.z, 0.0) * Quaternion::conjugated(*this);
         return Vector3<FPType>(ret.x, ret.y, ret.z);
     }
     
@@ -109,22 +116,22 @@ namespace linearalgebra {
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::normalized(const Quaternion<FPType> q) {
         Quaternion<FPType> ret = q;
-        q.normalize();
-        return q;
+        ret.normalize();
+        return ret;
     }
     
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::inversed(const Quaternion<FPType> q) {
         Quaternion<FPType> ret = q;
-        q.inverse();
-        return q;
+        ret.inverse();
+        return ret;
     }
     
     template<typename FPType>
     inline Quaternion<FPType> Quaternion<FPType>::conjugated(const Quaternion<FPType> q) {
         Quaternion<FPType> ret = q;
-        q.conjugate();
-        return q;
+        ret.conjugate();
+        return ret;
     }
     
     template<typename FPType>
