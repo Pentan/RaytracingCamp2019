@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 #include "pptypes.h"
 #include "ray.h"
 #include "aabb.h"
@@ -23,12 +24,24 @@ namespace PinkyPi {
     /////
     class Mesh {
     public:
+        enum AttributeId {
+            kNormal,
+            kTangent,
+            kUv,
+            kColor,
+            kJoints,
+            kWeights,
+
+            kNumAttrs
+        };
+
         struct Attributes {
-            Vector3 normal;
-            Vector3 tangent;
-            Vector3 uv0;
-            Vector3 uv1;
-            Color color;
+            Vector3* normal;
+            Vector4* tangent;
+            Vector3* uv0;
+            Vector4* color0;
+            IntVec4* joints0;
+            Vector4* weights0;
         };
         
         struct Triangle {
@@ -51,16 +64,23 @@ namespace PinkyPi {
         
         class Cluster {
         public:
-            Cluster(int numverts, int numtris);
+            Cluster(int numverts, int numtris, const std::map<AttributeId, int>& attrdesc);
             ~Cluster();
+
+            Attributes attributesAt(int i);
+            int attributeCount(AttributeId i) const;
             
             std::vector<Vector3> vertices;
-            std::vector<Attributes> attributes;
+            std::vector<unsigned char> attributeBuffer;
             std::vector<Triangle> triangles;
             Material *material;
             
             PPFloat area;
             AABB bounds;
+
+            size_t attributeCounts[kNumAttrs];
+            size_t attributeOffsets[kNumAttrs];
+            size_t attributeDataSize;
         };
         
     public:

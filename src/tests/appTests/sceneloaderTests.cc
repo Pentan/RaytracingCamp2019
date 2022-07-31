@@ -29,3 +29,11 @@ TEST_CASE("Scene loader test [SceneLoader]") {
     Scene *scene = assetlib->getDefaultScene();
     REQUIRE(scene != nullptr);
 }
+
+TEST_CASE("Skin test [SceneLoader]") {
+    std::string gltfpath = KhronosGlTFSampleModelPath("SimpleSkin");
+    AssetLibrary* assetlib = SceneLoader::load(gltfpath);
+    Scene* scene = assetlib->getDefaultScene();
+    REQUIRE(scene != nullptr);
+}
+

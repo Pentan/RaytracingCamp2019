@@ -11,15 +11,57 @@
 
 using namespace PinkyPi;
 
-Mesh::Cluster::Cluster(int numverts, int numtris):
+Mesh::Cluster::Cluster(int numverts, int numtris, const std::map<AttributeId, int>& attrdesc):
     material(nullptr)
 {
     vertices.resize(numverts);
-    attributes.resize(numverts);
     triangles.resize(numtris);
+
+    const size_t attrSizeTbl[] = {
+        sizeof(Vector3),    // kNormal,
+        sizeof(Vector4),    // kTangent,
+        sizeof(Vector3),    // kUv,
+        sizeof(Vector4),    // kColor,
+        sizeof(IntVec4),    // kJoints,
+        sizeof(Vector4),    // kWeights
+    };
+
+    attributeDataSize = 0;
+    memset(&attributeCounts, 0, sizeof(attributeCounts));
+
+    for (auto kv : attrdesc) {
+        attributeCounts[kv.first] = kv.second;
+        attributeDataSize += attrSizeTbl[kv.second];
+    }
+
+    attributeBuffer.resize(numverts * attributeDataSize);
+
+    attributeOffsets[0] = 0;
+    for (int i = 1; i < kNumAttrs; i++) {
+        int k = i - 1;
+        attributeOffsets[i] = attributeOffsets[k] + attrSizeTbl[k] * attributeCounts[k];
+    }
 }
 
 Mesh::Cluster::~Cluster() {
+}
+
+Mesh::Attributes Mesh::Cluster::attributesAt(int i) {
+    Attributes attrs;
+    unsigned char* data = attributeBuffer.data() + attributeDataSize * i;
+
+    attrs.normal = reinterpret_cast<Vector3*>(data + attributeOffsets[kNormal]);
+    attrs.tangent = reinterpret_cast<Vector4*>(data + attributeOffsets[kTangent]);
+    attrs.uv0 = reinterpret_cast<Vector3*>(data + attributeOffsets[kUv]);
+    attrs.color0 = reinterpret_cast<Vector4*>(data + attributeOffsets[kColor]);
+    attrs.joints0 = reinterpret_cast<IntVec4*>(data + attributeOffsets[kJoints]);
+    attrs.weights0 = reinterpret_cast<Vector4*>(data + attributeOffsets[kNormal]);
+
+    return attrs;
+}
+
+int Mesh::Cluster::attributeCount(AttributeId i) const {
+    return attributeCounts[i];
 }
 
 PPFloat Mesh::Triangle::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPFloat *obb, PPFloat *obc) const

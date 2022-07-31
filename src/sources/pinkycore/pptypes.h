@@ -20,6 +20,20 @@ namespace PinkyPi {
     typedef linearalgebra::Matrix4<PPFloat> Matrix4;
     typedef linearalgebra::Quaternion<PPFloat> Quaterion;
 
+    union IntVec3 {
+        struct { int x, y, z; };
+        struct { int i, j, k; };
+        struct { int i0, i1, i2; };
+        int v[3];
+    };
+
+    union IntVec4 {
+        struct { int x, y, z, w; };
+        struct { int i, j, k, l; };
+        struct { int i0, i1, i2, i3; };
+        int v[4];
+    };
+
     // color
     typedef double PPColorType;
     typedef linearalgebra::Vector3<PPColorType> Color;

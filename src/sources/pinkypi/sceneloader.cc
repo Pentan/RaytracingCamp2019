@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <vector>
 #include <memory>
+#include <map>
 
 #include <nlohmann/json.hpp>
 #include <stb/stb_image.h>
@@ -481,41 +482,79 @@ namespace {
                 
                 // Vertex
                 int accid;
-                
-                accid = gltfprimitive.attributes.at("POSITION");
-                auto posba = BufferAccessor(model.accessors[accid], model);
-                
-                accid = gltfprimitive.attributes.at("NORMAL");
-                auto nrmba = BufferAccessor(model.accessors[accid], model);
-                
+                BufferAccessor posba;
+                BufferAccessor nrmba;
                 BufferAccessor tanba;
-                if(gltfprimitive.attributes.find("TANGENT") != gltfprimitive.attributes.end()) {
-                    accid = gltfprimitive.attributes.at("TANGENT");
-                    tanba.init(model.accessors[accid], model);
+
+                std::map<Mesh::AttributeId, int> attrMap;
+                int numUvs = 0;
+                int numJoints = 0;
+                int numWeights = 0;
+                int numColors = 0;
+                for (auto kv : gltfprimitive.attributes) {
+                    auto key = kv.first;
+
+                    if (key.compare("POSITION") == 0) {
+                        accid = gltfprimitive.attributes.at("POSITION");
+                        posba.init(model.accessors[accid], model);
+                    } else if (key.compare("NORMAL") == 0) {
+                        accid = gltfprimitive.attributes.at("NORMAL");
+                        nrmba.init(model.accessors[accid], model);
+                        attrMap[Mesh::AttributeId::kNormal] = 1;
+                    } else if (key.compare("TANGENT") == 0) {
+                        accid = gltfprimitive.attributes.at("TANGENT");
+                        tanba.init(model.accessors[accid], model);
+                        attrMap[Mesh::AttributeId::kTangent] = 1;
+                    }
+                    else if (key.find("TEXCOORD") == 0) {
+                        numUvs += 1;
+                    } else if (key.find("JOINTS") == 0) {
+                        numJoints += 1;
+                    } else if (key.find("WEIGHTS") == 0) {
+                        numWeights += 1;
+                    } else if (key.find("COLOR") == 0) {
+                        numColors += 1;
+                    }
                 }
-                
-                BufferAccessor uv0ba;
-                if(gltfprimitive.attributes.find("TEXCOORD_0") != gltfprimitive.attributes.end()) {
-                    accid = gltfprimitive.attributes.at("TEXCOORD_0");
-                    uv0ba.init(model.accessors[accid], model);
+
+                attrMap[Mesh::AttributeId::kUv] = numUvs;
+                attrMap[Mesh::AttributeId::kJoints] = numJoints;
+                attrMap[Mesh::AttributeId::kWeights] = numWeights;
+                attrMap[Mesh::AttributeId::kColor] = numColors;
+
+                std::vector<BufferAccessor> uvba(numUvs);
+                std::vector<BufferAccessor> jointba(numJoints);
+                std::vector<BufferAccessor> weightba(numWeights);
+                std::vector<BufferAccessor> colorba(numColors);
+                std::stringstream attrNameSS;
+
+                std::vector<BufferAccessor>* batbl[] = {
+                    &uvba,
+                    &jointba,
+                    &weightba,
+                    &colorba
+                };
+                std::string attrtbl[] = {
+                    "TEXCOORD_",
+                    "JOINTS_",
+                    "WEIGHTS_",
+                    "COLOR_"
+                };
+
+                for (int iba = 0; iba < 4; iba++) {
+                    auto baptr = batbl[iba];
+                    for (size_t iattr = 0; iattr < baptr->size(); iattr++) {
+                        attrNameSS.str("");
+                        attrNameSS << attrtbl[iba] << iattr;
+                        std::string key = attrNameSS.str();
+
+                        if (gltfprimitive.attributes.find(key) == gltfprimitive.attributes.end()) {
+                            continue;
+                        }
+                        accid = gltfprimitive.attributes.at(key);
+                        baptr->at(iattr).init(model.accessors[accid], model);
+                    }
                 }
-                
-                BufferAccessor uv1ba;
-                if(gltfprimitive.attributes.find("TEXCOORD_1") != gltfprimitive.attributes.end()) {
-                    accid = gltfprimitive.attributes.at("TEXCOORD_1");
-                    uv1ba.init(model.accessors[accid], model);
-                }
-                
-                BufferAccessor colba;
-                if(gltfprimitive.attributes.find("COLOR") != gltfprimitive.attributes.end()) {
-                    accid = gltfprimitive.attributes.at("COLOR");
-                    colba.init(model.accessors[accid], model);
-                }
-                
-                // JOINTS
-                // WEIGHTS
-                // TARGETS
-                
                 
                 // Triangle
                 BufferAccessor indba(model.accessors[gltfprimitive.indices], model);
@@ -523,7 +562,7 @@ namespace {
                 int numverts = posba.getStructCount();
                 int numtris = indba.getStructCount() / 3;
                 
-                auto cluster = new Mesh::Cluster(numverts, numtris);
+                auto cluster = new Mesh::Cluster(numverts, numtris, attrMap);
                 
                 for(int iv = 0; iv < numverts; iv++) {
                     Vector3 &v = cluster->vertices[iv];
@@ -531,29 +570,52 @@ namespace {
                     v.y = posba.readFloat();
                     v.z = posba.readFloat();
                     
-                    Mesh::Attributes &attrs = cluster->attributes[iv];
-                    attrs.normal.x = nrmba.readFloat();
-                    attrs.normal.y = nrmba.readFloat();
-                    attrs.normal.z = nrmba.readFloat();
+                    Mesh::Attributes attrs = cluster->attributesAt(iv);
+                    attrs.normal->x = nrmba.readFloat();
+                    attrs.normal->y = nrmba.readFloat();
+                    attrs.normal->z = nrmba.readFloat();
                     
-                    attrs.tangent.x = tanba.readFloat();
-                    attrs.tangent.y = tanba.readFloat();
-                    attrs.tangent.z = tanba.readFloat();
+                    attrs.tangent->x = tanba.readFloat();
+                    attrs.tangent->y = tanba.readFloat();
+                    attrs.tangent->z = tanba.readFloat();
                     
-                    attrs.uv0.x = uv0ba.readFloat();
-                    attrs.uv0.y = uv0ba.readFloat();
-                    attrs.uv0.z = 0.0;
-                    
-                    attrs.uv1.x = uv1ba.readFloat();
-                    attrs.uv1.y = uv1ba.readFloat();
-                    attrs.uv1.z = 0.0;
-                    
-                    attrs.color.x = colba.readFloat();
-                    attrs.color.y = colba.readFloat();
-                    attrs.color.z = colba.readFloat();
-                    if(colba.getComponentCountInStruct() > 3) {
-                        // Alpha
-                        colba.readFloat();
+                    for (int j = 0; j < numUvs; j++) {
+                        Vector3* uvn = attrs.uv0 + j;
+                        auto& ba = uvba[j];
+                        uvn->x = ba.readFloat();
+                        uvn->y = ba.readFloat();
+                        uvn->z = 0.0;
+                    }
+
+                    for (int j = 0; j < numColors; j++) {
+                        Vector4* colorn = attrs.color0 + j;
+                        auto& ba = colorba[j];
+                        colorn->x = ba.readFloat();
+                        colorn->y = ba.readFloat();
+                        colorn->z = ba.readFloat();
+                        if (ba.getComponentCountInStruct() > 3) {
+                            colorn->w = ba.readFloat();
+                        } else {
+                            colorn->w = 0.0;
+                        }
+                    }
+
+                    for (int j = 0; j < numJoints; j++) {
+                        IntVec4* jointsn = attrs.joints0 + j;
+                        auto& ba = jointba[j];
+                        jointsn->x = ba.readInt();
+                        jointsn->y = ba.readInt();
+                        jointsn->z = ba.readInt();
+                        jointsn->w = ba.readInt();
+                    }
+
+                    for (int j = 0; j < numWeights; j++) {
+                        Vector4* weightsn = attrs.weights0 + j;
+                        auto& ba = weightba[j];
+                        weightsn->x = ba.readFloat();
+                        weightsn->y = ba.readFloat();
+                        weightsn->z = ba.readFloat();
+                        weightsn->w = ba.readFloat();
                     }
                 }
                 
@@ -567,13 +629,17 @@ namespace {
                 }
                 
                 // Material
-                cluster->material = assetlib->getMaterial(gltfprimitive.material);
-                
-                //
-                auto sptr = std::shared_ptr<Mesh::Cluster>(cluster);
-                mesh->clusters.push_back(sptr);
-                if(cluster->material->emissiveFactor.getMaxComponent() > 0.0) {
-                    mesh->emissiveClusters.push_back(sptr);
+                if (gltfprimitive.material < 0) {
+                    cluster->material = nullptr; // FIXME use place holder material
+                } else {
+                    cluster->material = assetlib->getMaterial(gltfprimitive.material);
+
+                    //
+                    auto sptr = std::shared_ptr<Mesh::Cluster>(cluster);
+                    mesh->clusters.push_back(sptr);
+                    if (cluster->material->emissiveFactor.getMaxComponent() > 0.0) {
+                        mesh->emissiveClusters.push_back(sptr);
+                    }
                 }
                 
                 primCount += 1;
@@ -587,6 +653,24 @@ namespace {
             assetlib->meshes.push_back(std::shared_ptr<Mesh>(mesh));
             count += 1;
         }
+        return count;
+    }
+
+    int ParseSkins(const tinygltf::Model& model, AssetLibrary* assetLib) {
+        int count = 0;
+        if (model.skins.size() <= 0) {
+            return 0;
+        }
+
+        return count;
+    }
+
+    int ParseAnimations(const tinygltf::Model& model, AssetLibrary* assetLib) {
+        int count = 0;
+        if (model.animations.size() <= 0) {
+            return 0;
+        }
+
         return count;
     }
     
@@ -910,6 +994,8 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     ParseTextures(model, assetLib);
     ParseMaterials(model, assetLib);
     ParseMeshs(model, assetLib);
+    ParseSkins(model, assetLib);
+    ParseAnimations(model, assetLib);
     ParseLights(model, assetLib);
     ParseCameras(model, assetLib);
     ParseNodes(model, assetLib);
