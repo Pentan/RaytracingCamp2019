@@ -37,6 +37,9 @@ namespace PinkyPi {
     // color
     typedef double PPColorType;
     typedef linearalgebra::Vector3<PPColorType> Color;
+    
+    // time
+    typedef double PPTimeType;
 
 }
 

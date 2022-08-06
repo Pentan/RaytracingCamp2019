@@ -25,6 +25,9 @@
 #include <pinkycore/light.h>
 #include <pinkycore/node.h>
 #include <pinkycore/camera.h>
+#include <pinkycore/animation.h>
+#include <pinkycore/keyframesampler.h>
+#include <pinkycore/skin.h>
 //#include <pinkycore/>
 //#include <pinkycore/>
 
@@ -661,17 +664,125 @@ namespace {
         if (model.skins.size() <= 0) {
             return 0;
         }
+        assetLib->skins.reserve(model.skins.size());
+        
+        for(auto ite = model.skins.begin(); ite != model.skins.end(); ++ite) {
+            auto gltfskin = *ite;
+            auto skin = new Skin();
+            
+            if(gltfskin.name.size() > 0) {
+                skin->name = gltfskin.name;
+            }
+            
+            int jointcount = gltfskin.joints.size();
+            skin->jointNodes.reserve(jointcount);
+            for(auto jntite = gltfskin.joints.begin(); jntite != gltfskin.joints.end(); ++jntite) {
+                skin->jointNodes.push_back(assetLib->nodes[*jntite].get());
+            }
+            
+            if(gltfskin.skeleton > 0) {
+                skin->skeltonRoot = assetLib->nodes[gltfskin.skeleton].get();
+            } else {
+                skin->skeltonRoot = skin->jointNodes[0];
+            }
+            
+            skin->inverseBindMatrices.resize(jointcount);
+            if(gltfskin.inverseBindMatrices >= 0) {
+                BufferAccessor ibmba;
+                ibmba.init(model.accessors[gltfskin.inverseBindMatrices], model);
+                
+                for(int ijnt = 0; ijnt < jointcount; ijnt++) {
+                    for(int imtx = 0; imtx < 16; imtx++) {
+                        skin->inverseBindMatrices[ijnt].m[imtx] = ibmba.readFloat();
+                    }
+                }
+            } else {
+                for(int ijnt = 0; ijnt < jointcount; ijnt++) {
+                    skin->inverseBindMatrices[ijnt].setIdentity();
+                }
+            }
+            
+            assetLib->skins.push_back(std::shared_ptr<Skin>(skin));
+        }
 
         return count;
     }
 
     int ParseAnimations(const tinygltf::Model& model, AssetLibrary* assetLib) {
-        int count = 0;
-        if (model.animations.size() <= 0) {
+        if(model.animations.size() <= 0) {
             return 0;
         }
+        assetLib->animations.reserve(model.animations.size());
+        
+        for(auto ite = model.animations.begin(); ite != model.animations.end(); ++ite) {
+            auto gltfanim = *ite;
+            auto anim = new Animation();
+            
+            if(gltfanim.name.size() > 0) {
+                anim->name = gltfanim.name;
+            }
+            
+            // samplers
+            anim->samplers.reserve(gltfanim.samplers.size());
+            for(auto smpite = gltfanim.samplers.begin(); smpite != gltfanim.samplers.end(); ++ smpite) {
+                auto gltfsampler = *smpite;
+                auto kfsampler = new KeyframeSampler();
+                
+                BufferAccessor inputba(model.accessors[gltfsampler.input], model);
+                BufferAccessor outputba(model.accessors[gltfsampler.output], model);
+                
+                int keycount = inputba.getTotalComponentCount();
+                kfsampler->timeStamps.resize(keycount);
+                for(int ikey = 0; ikey < keycount; ikey++) {
+                    kfsampler->timeStamps[ikey] = static_cast<PPTimeType>(inputba.readFloat());
+                }
+                
+                int smplcount = outputba.getTotalComponentCount();
+                kfsampler->sampleBuffer.resize(smplcount);
+                for(int ismp = 0; ismp < smplcount; ismp++) {
+                    kfsampler->sampleBuffer[ismp] = outputba.readFloat();
+                }
+                kfsampler->sampleComponents = outputba.getComponentCountInStruct();
+                
+                if(gltfsampler.interpolation.size() > 0) {
+                    if(gltfsampler.interpolation.compare("STEP") == 0) {
+                        kfsampler->interpolation = KeyframeSampler::kStep;
+                    } else if(gltfsampler.interpolation.compare("CUBICSPLINE") == 0) {
+                        kfsampler->interpolation = KeyframeSampler::kCubicSpline;
+                    } else {
+                        kfsampler->interpolation = KeyframeSampler::kLinear;
+                    }
+                }
+                
+                anim->samplers.push_back(std::shared_ptr<KeyframeSampler>(kfsampler));
+            }
+            
+            // target channels
+            size_t chcount = gltfanim.channels.size();
+            anim->targets.resize(chcount);
+            int ich = 0;
+            for(auto chite = gltfanim.channels.begin(); chite != gltfanim.channels.end(); ++chite, ++ich) {
+                auto gltfch = *chite;
+                auto& targetch = anim->targets[ich];
+                
+                targetch.sampler = anim->samplers[gltfch.sampler].get();
+                targetch.node = assetLib->nodes[gltfch.target_node].get();
+                auto chpath = gltfch.target_path;
+                if(chpath.compare("translation") == 0) {
+                    targetch.targetProp = Animation::kTranslation;
+                } else if(chpath.compare("rotation") == 0) {
+                    targetch.targetProp = Animation::kRotation;
+                } else if(chpath.compare("scale") == 0) {
+                    targetch.targetProp = Animation::kScale;
+                } else if(chpath.compare("weights") == 0) {
+                    targetch.targetProp = Animation::kMorphWeights;
+                }
+            }
+            
+            assetLib->animations.push_back(std::shared_ptr<Animation>(anim));
+        }
 
-        return count;
+        return static_cast<int>(assetLib->animations.size());
     }
     
     /*
@@ -994,11 +1105,11 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     ParseTextures(model, assetLib);
     ParseMaterials(model, assetLib);
     ParseMeshs(model, assetLib);
-    ParseSkins(model, assetLib);
-    ParseAnimations(model, assetLib);
     ParseLights(model, assetLib);
     ParseCameras(model, assetLib);
     ParseNodes(model, assetLib);
+    ParseSkins(model, assetLib);
+    ParseAnimations(model, assetLib);
     ParseScenes(model, assetLib);
     
     assetLib->defaultSceneId = model.defaultScene;

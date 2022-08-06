@@ -37,3 +37,17 @@ TEST_CASE("Skin test [SceneLoader]") {
     REQUIRE(scene != nullptr);
 }
 
+TEST_CASE("Morph test [SceneLoader]") {
+    std::string gltfpath = KhronosGlTFSampleModelPath("AnimatedMorphSphere");
+    AssetLibrary* assetlib = SceneLoader::load(gltfpath);
+    Scene* scene = assetlib->getDefaultScene();
+    REQUIRE(scene != nullptr);
+}
+
+TEST_CASE("Animated model test 01 [SceneLoader]") {
+    std::string gltfpath = KhronosGlTFSampleModelPath("Fox");
+    AssetLibrary* assetlib = SceneLoader::load(gltfpath);
+    Scene* scene = assetlib->getDefaultScene();
+    REQUIRE(scene != nullptr);
+}
+

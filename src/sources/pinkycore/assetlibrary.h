@@ -14,6 +14,8 @@ namespace PinkyPi {
     class Node;
     class Camera;
     class Scene;
+    class Animation;
+    class Skin;
     
     class AssetLibrary {
     public:
@@ -34,8 +36,10 @@ namespace PinkyPi {
         std::vector<std::shared_ptr<Texture> > textures;
         std::vector<std::shared_ptr<Mesh> > meshes;
         std::vector<std::shared_ptr<Light> > lights;
-        std::vector<std::shared_ptr<Node> > nodes;
         std::vector<std::shared_ptr<Camera> > cameras;
+        std::vector<std::shared_ptr<Node> > nodes;
+        std::vector<std::shared_ptr<Skin> > skins;
+        std::vector<std::shared_ptr<Animation> > animations;
         std::vector<std::shared_ptr<Scene> > scenes;
         
         int defaultSceneId;

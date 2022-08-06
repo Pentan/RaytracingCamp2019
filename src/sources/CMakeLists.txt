@@ -37,6 +37,9 @@ list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/node.cc
     ${PINKYPI_CORE_DIR}/assetlibrary.cc
     ${PINKYPI_CORE_DIR}/bvh.cc
+    ${PINKYPI_CORE_DIR}/animation.cc
+    ${PINKYPI_CORE_DIR}/keyframesampler.cc
+    ${PINKYPI_CORE_DIR}/skin.cc
 )
 list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/pptypes.h
@@ -57,6 +60,9 @@ list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/assetlibrary.h
     ${PINKYPI_CORE_DIR}/bvh.h
     ${PINKYPI_CORE_DIR}/random.h
+    ${PINKYPI_CORE_DIR}/animation.h
+    ${PINKYPI_CORE_DIR}/keyframesampler.h
+    ${PINKYPI_CORE_DIR}/skin.h
 )
 
 add_library(PinkyCore ${PINKYPI_CORE_SRCS})
