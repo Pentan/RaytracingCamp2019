@@ -15,12 +15,22 @@ namespace PinkyPi {
             kCubicSpline
         };
         
+        struct KeyWeights {
+            int keyindex[2];
+            PPFloat weights[2];
+        };
+        
         KeyframeSampler()
             : interpolation(kLinear)
         {}
         
-        PPFloat* evaluate(PPTimeType time);
-        Quaterion evaluateQuaternion(PPTimeType time);
+//        int nearestKeyframeIndex(PPTimeType time) const;
+        KeyWeights calclateKeyWeights(PPTimeType time) const;
+        
+        void sample(PPTimeType time, std::vector<PPFloat>& outbuf);
+        Vector3 sampleVector3(PPTimeType time);
+        Vector4 sampleVector4(PPTimeType time);
+        Quaterion sampleQuaternion(PPTimeType time);
         
         InterpolationType interpolation;
         std::vector<PPTimeType> timeStamps;
