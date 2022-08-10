@@ -1,4 +1,6 @@
 #include <ctime>
+#include <iostream>
+#include <sstream>
 #include "renderer.h"
 #include "config.h"
 #include "scene.h"
@@ -6,13 +8,36 @@
 #include "framebuffer.h"
 #include "random.h"
 #include "ray.h"
+#include "postprocessor.h"
 
 using namespace PinkyPi;
 
-Renderer::Renderer(const Config& config, const Scene* scn):
-    scene(scn)
+namespace {
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#include <windows.h>
+double getTimeInSeconds() {
+    return timeGetTime() / 1000.0;
+}
+#else
+#include <sys/time.h>
+double getTimeInSeconds() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + (double)tv.tv_usec * 1e-6;
+}
+#endif
+}
+
+Renderer::Renderer(const Config& config, Scene* scn):
+    scene(scn),
+    frameBufferIndex(0)
 {
-    framebuffer = new FrameBuffer(config.width, config.height, config.tileSize);
+    framebuffers.reserve(config.framebufferStockCount);
+    for(int i = 0; i < config.framebufferStockCount; i++) {
+        auto fb = new FrameBuffer(config.width, config.height, config.tileSize);
+        framebuffers.push_back(std::unique_ptr<FrameBuffer>(fb));
+    }
     
     samplesPerPixel = config.samplesPerPixel;
     pixelSubSamples = config.pixelSubSamples;
@@ -20,33 +45,138 @@ Renderer::Renderer(const Config& config, const Scene* scn):
     minDepth = config.minDepth;
     maxDepth = config.maxDepth;
     minRussianRouletteCutOff = config.minRussianRouletteCutOff;
+    
+    renderFrames = config.frames;
+    fps = config.framesPerSecond;
+    exposureSec = config.exposureSecond;
+    exposureSlice = config.exposureSlice;
+    
+    numMaxJobs = config.maxThreads;
+    
+    limitSecPerFrame = config.limitSec / config.frames;
+    progressIntervalSec = config.progressIntervalSec;
+    
+    auto extpos = config.outputFile.rfind(".");
+    if(extpos > 0) {
+        saveNameBase = config.outputFile.substr(0, extpos);
+        saveExt = config.outputFile.substr(extpos);
+    } else {
+        saveNameBase = config.outputFile;
+        saveExt = ".jpg";
+    }
 }
 
 Renderer::~Renderer() {
-    delete framebuffer;
+    cleanupWorkers();
 }
 
-void Renderer::render() {
-    
-    framebuffer->clear();
-    
-    numMaxJobs = 1;
+void Renderer::renderOneFrame(FrameBuffer* fb, PPTimeType opentime, PPTimeType closetime) {
+    // scene setup
+    scene->seekTime(opentime, closetime, exposureSlice);
     
     // init contexts
-    renderContexts.resize(numMaxJobs);
     unsigned long seedbase = time(NULL);
     for(int i = 0; i < numMaxJobs; i++) {
         Context& cntx = renderContexts[i];
         cntx.random.setSeed(seedbase + i * 123456789);
+        cntx.framebuffer = fb;
     }
     
     // setup jobs
-    int numTiles = framebuffer->getNumTiles();
-    for(int i = 0; i < numTiles; i++) {
-        Renderer::renderJob(i, i % numMaxJobs, this);
+    int numTiles = fb->getNumTiles();
+    {
+        std::unique_lock<std::mutex> lock(commandQueueMutex);
+        for(int i = 0; i < numTiles; i++) {
+            JobCommand cmd;
+            cmd.type = CommandType::kRender;
+            cmd.render.tileIndex = i;
+            commandQueue.push(cmd);
+        }
+    }
+    workerCondition.notify_all();
+}
+
+void Renderer::saveFrafmebuffer(FrameBuffer* fb, int frameid) {
+    std::stringstream ss;
+    ss << saveNameBase << frameid << saveExt;
+    auto savepath = ss.str();
+    
+    PostProcessor pp(fb, savepath);
+    pp.process();
+    pp.writeToFile();
+}
+
+void Renderer::render() {
+    
+    numMaxJobs = 1; //+++++
+    
+    if(numMaxJobs == 0) {
+        numMaxJobs = std::thread::hardware_concurrency();
+    }
+    renderContexts.resize(numMaxJobs);
+    
+    if(numMaxJobs > 1) {
+        setupWorkers();
     }
     
-    // wait
+    for(int i = 0; i < renderFrames; i++) {
+        auto fb = framebuffers[frameBufferIndex].get();
+        fb->clear();
+        
+        PPTimeType t = i / static_cast<PPTimeType>(fps);
+        renderOneFrame(fb, t, t + exposureSec);
+        
+        // wait
+        if(numMaxJobs <= 1) {
+            // serial exection
+            processAllCommands();
+        } else {
+            //
+            if(progressIntervalSec > 0.0) {
+                // wait and log output
+                long sleepMilliSec = static_cast<long>(std::min(0.1, progressIntervalSec) * 1000.0);
+                bool waiting = true;
+                double logedtime = 0.0;
+                while (waiting) {
+                    // sleep
+                    std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliSec));
+                    
+                    // check
+                    bool isprocessing = false;
+                    for(auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
+                        if(ite->status == WorkerStatus::kProcessing) {
+                            isprocessing = true;
+                        }
+                    }
+                    waiting = isprocessing | !commandQueue.empty();
+                    
+                    // log
+                    double curtime = getTimeInSeconds();
+                    if(curtime - logedtime > progressIntervalSec) {
+                        // print
+                        logedtime = curtime;
+                    }
+                }
+            } else {
+                // condition wait
+                std::unique_lock<std::mutex> lock(commandQueueMutex);
+                watcherCondition.wait(lock, [this]{ return commandQueue.empty(); });
+            }
+        }
+        
+        // post process
+        
+        // save frame
+        saveFrafmebuffer(fb, i);
+        if(numMaxJobs <= 1) {
+            processAllCommands();
+        }
+        
+        // next
+        frameBufferIndex = (frameBufferIndex + 1) % framebuffers.size();
+    }
+    
+    cleanupWorkers();
 }
 
 void Renderer::pathtrace(const Ray& ray, const Scene* scn, Context* cntx, RenderResult *result)
@@ -76,14 +206,13 @@ void Renderer::pathtrace(const Ray& ray, const Scene* scn, Context* cntx, Render
     result->depth = depth;
 }
 
-void Renderer::renderJob(int jobid, int workerid, void* dat) {
-    Renderer *rndr = reinterpret_cast<Renderer*>(dat);
-    const FrameBuffer::Tile& tile = rndr->framebuffer->getTile(jobid);
-    Context *cntx = &rndr->renderContexts[workerid];
+void Renderer::renderJob(int workerid, JobCommand cmd) {
+    Context *cntx = &renderContexts[workerid];
     Random& rng = cntx->random;
+    const FrameBuffer::Tile& tile = cntx->framebuffer->getTile(cmd.render.tileIndex);
     
-    PPFloat subPixelSize = 1.0 / rndr->pixelSubSamples;
-    Camera *camera = rndr->scene->cameras[0];
+    PPFloat subPixelSize = 1.0 / pixelSubSamples;
+    Camera *camera = scene->cameras[0];
     
     RenderResult result;
     
@@ -92,22 +221,22 @@ void Renderer::renderJob(int jobid, int workerid, void* dat) {
             PPFloat px = PPFloat(ix);
             PPFloat py = PPFloat(iy);
             int pixelId = tile.getPixelIndex(ix, iy);
-            FrameBuffer::Pixel& pixel = rndr->framebuffer->getPixel(pixelId);
+            FrameBuffer::Pixel& pixel = cntx->framebuffer->getPixel(pixelId);
             
-            for(int issy = 0; issy < rndr->pixelSubSamples; issy++) {
-                for(int issx = 0; issx < rndr->pixelSubSamples; issx++) {
+            for(int issy = 0; issy < pixelSubSamples; issy++) {
+                for(int issx = 0; issx < pixelSubSamples; issx++) {
                     PPFloat ssx = PPFloat(issx) * subPixelSize;
                     PPFloat ssy = PPFloat(issy) * subPixelSize;
                     
-                    for(int ips = 0; ips < rndr->samplesPerPixel; ips++) {
+                    for(int ips = 0; ips < samplesPerPixel; ips++) {
                         PPFloat sx = px + ssx + rng.nextDoubleCO() * subPixelSize;
                         PPFloat sy = py + ssy + rng.nextDoubleCO() * subPixelSize;
                         
-                        sx = (sx / rndr->framebuffer->getWidth()) * 2.0 - 1.0;
-                        sy = (sy / rndr->framebuffer->getHeight()) * 2.0 - 1.0;
+                        sx = (sx / cntx->framebuffer->getWidth()) * 2.0 - 1.0;
+                        sy = (sy / cntx->framebuffer->getHeight()) * 2.0 - 1.0;
                         
                         Ray ray = camera->getRay(sx, sy);
-                        rndr->pathtrace(ray, rndr->scene, cntx, &result);
+                        pathtrace(ray, scene, cntx, &result);
                         
                         pixel.accumulate(result.radiance);
                     }
@@ -115,7 +244,99 @@ void Renderer::renderJob(int jobid, int workerid, void* dat) {
             }
         }
     }
+}
+
+void Renderer::postprocessJob(int workerid, JobCommand cmd) {
     
+}
+
+void Renderer::saveFileJob(int workerid, JobCommand cmd) {
+    
+}
+
+void Renderer::startWorker(int workerid, Renderer* rndr) {
+    rndr->wokerMain(workerid);
+}
+
+void Renderer::wokerMain(int workerid) {
+    auto* info = &workerInfos[workerid];
+    
+    while(true) {
+        JobCommand cmd;
+        info->status = WorkerStatus::kWaiting;
+        info->commandType = CommandType::kNoop;
+        {
+            std::unique_lock<std::mutex> lock(commandQueueMutex);
+            workerCondition.wait(lock, [this]{ return !commandQueue.empty() || stopWorkers; });
+            cmd = commandQueue.front();
+            commandQueue.pop();
+            watcherCondition.notify_all();
+        }
+        
+        if(stopWorkers) break;
+        
+        info->status = WorkerStatus::kProcessing;
+        info->commandType = cmd.type;
+        processCommand(workerid, cmd);
+    }
+    
+    info->status = WorkerStatus::kStopped;
+    info->commandType = CommandType::kNoop;
+}
+
+void Renderer::processCommand(int workerid, JobCommand cmd) {
+    switch (cmd.type) {
+        case kRender:
+            renderJob(workerid, cmd);
+            break;
+        case kPostprocess:
+            postprocessJob(workerid, cmd);
+            break;
+        case kSaveFile:
+            saveFileJob(workerid, cmd);
+            break;
+        default:
+            break;
+    }
+}
+
+void Renderer::processAllCommands() {
+    // for serial exection
+    while(!commandQueue.empty()) {
+        auto cmd = commandQueue.front();
+        commandQueue.pop();
+        processCommand(0, cmd);
+    }
+}
+
+void Renderer::setupWorkers() {
+    if(numMaxJobs <= 1) return;
+    workerInfos.resize(numMaxJobs);
+    stopWorkers = false;
+    workerPool.reserve(numMaxJobs);
+    for(int i = 0; i < numMaxJobs; i++) {
+        workerInfos[i].status = WorkerStatus::kStart;
+        workerInfos[i].commandType = CommandType::kNoop;
+        workerPool.emplace_back(startWorker, i, this);
+    }
+}
+
+void Renderer::cleanupWorkers() {
+    if(workerPool.size() == 0) {
+        return;
+    }
+    
+    // stop threads
+    {
+        std::unique_lock<std::mutex> lock(commandQueueMutex);
+        stopWorkers = true;
+    }
+    workerCondition.notify_all();
+    
+    for(size_t i = 0; i < workerPool.size(); i++) {
+        workerPool[i].join();
+    }
+    workerPool.clear();
 }
 
 void Renderer::RenderResult::clear() {

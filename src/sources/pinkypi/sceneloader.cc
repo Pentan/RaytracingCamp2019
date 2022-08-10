@@ -660,7 +660,6 @@ namespace {
     }
 
     int ParseSkins(const tinygltf::Model& model, AssetLibrary* assetLib) {
-        int count = 0;
         if (model.skins.size() <= 0) {
             return 0;
         }
@@ -704,8 +703,16 @@ namespace {
             
             assetLib->skins.push_back(std::shared_ptr<Skin>(skin));
         }
+        
+        // assign skin objects
+        for(auto ite = assetLib->nodes.begin(); ite != assetLib->nodes.end(); ++ite) {
+            auto node = *ite;
+            if(node->contentType == Node::kContentTypeMesh) {
+                node->skin = (node->skinId < 0) ? nullptr : assetLib->skins[node->skinId].get();
+            }
+        }
 
-        return count;
+        return assetLib->skins.size();
     }
 
     int ParseAnimations(const tinygltf::Model& model, AssetLibrary* assetLib) {
@@ -966,11 +973,16 @@ namespace {
         for(auto ite = model.nodes.begin(); ite != model.nodes.end(); ++ite) {
             auto gltfnode = *ite;
             
+            auto node = new Node();
+            node->name = gltfnode.name;
+            
             // get transform
-            Matrix4 transmat;
+            bool hastrs = false;
+            bool hasmatrix = false;
             
             if(gltfnode.translation.size() > 0) {
-                transmat.translate(
+                hastrs = true;
+                node->initialTransform.translate.set(
                     gltfnode.translation[0],
                     gltfnode.translation[1],
                     gltfnode.translation[2]
@@ -978,12 +990,18 @@ namespace {
             }
             
             if(gltfnode.rotation.size() > 0) {
-                Quaterion rotation(gltfnode.rotation[0], gltfnode.rotation[1], gltfnode.rotation[2], gltfnode.rotation[3]);
-                transmat = transmat * rotation.getMatrix();
+                hastrs = true;
+                node->initialTransform.rotation.set(
+                    gltfnode.rotation[0],
+                    gltfnode.rotation[1],
+                    gltfnode.rotation[2],
+                    gltfnode.rotation[3]
+                );
             }
             
             if(gltfnode.scale.size() > 0) {
-                transmat.scale(
+                hastrs = true;
+                node->initialTransform.scale.set(
                     gltfnode.scale[0],
                     gltfnode.scale[1],
                     gltfnode.scale[2]
@@ -992,7 +1010,7 @@ namespace {
             
             if(gltfnode.matrix.size() > 0) {
                 auto mat = gltfnode.matrix;
-                transmat.set(
+                node->initialTransform.matrix.set(
                     mat[0], mat[1], mat[2], mat[3],
                     mat[4], mat[5], mat[6], mat[7],
                     mat[8], mat[9], mat[10], mat[11],
@@ -1000,10 +1018,11 @@ namespace {
                 );
             }
             
-            auto node = new Node();
-            node->name = gltfnode.name;
-            node->transform = transmat;
+            if(hastrs) {
+                node->initialTransform.makeMatrix();
+            }
             
+            // node content
             if(gltfnode.camera >= 0) {
                 node->contentType = Node::kContentTypeCamera;
                 node->camera = assetlib->cameras[gltfnode.camera].get();
@@ -1011,6 +1030,7 @@ namespace {
             } else if(gltfnode.mesh >= 0) {
                 node->contentType = Node::kContentTypeMesh;
                 node->mesh = assetlib->meshes[gltfnode.mesh].get();
+                node->skinId = gltfnode.skin; // delay
             }
             
             size_t numchild = gltfnode.children.size();

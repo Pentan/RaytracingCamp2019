@@ -30,7 +30,7 @@ bool Scene::buildForTrace(AssetLibrary *assetlib) {
 }
 
 void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
-    Matrix4 m = gm * node->transform;
+    Matrix4 m = gm * node->currentTransform.matrix;
     for(auto i = node->children.begin(); i != node->children.end(); i++) {
         auto child = assetlib->nodes.at(*i).get();
         traverseNode(child, m, assetlib);
@@ -49,6 +49,10 @@ void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
         default:
             break;
     }
+}
+
+void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice) {
+    
 }
 
 PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, SceneIntersection *oisect) const {

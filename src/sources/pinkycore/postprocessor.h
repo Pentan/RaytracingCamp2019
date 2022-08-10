@@ -9,10 +9,10 @@ namespace PinkyPi {
     
     class PostProcessor {
     public:
-        PostProcessor(const FrameBuffer *srcbuf);
+        PostProcessor(const FrameBuffer *srcbuf, const std::string path);
         
         void process();
-        bool writeToFile(const std::string path);
+        bool writeToFile();
     };
 }
 

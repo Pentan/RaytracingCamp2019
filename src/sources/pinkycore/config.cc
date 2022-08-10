@@ -37,6 +37,9 @@ bool Config::load(const std::string& path) {
     frames = GetConfigValue<int>(jsonRoot, "frames", frames);
     framesPerSecond = GetConfigValue<double>(jsonRoot, "framesPerSecond", framesPerSecond);
     
+    exposureSecond = GetConfigValue<double>(jsonRoot, "exposureSecond", exposureSecond);
+    exposureSlice = GetConfigValue<int>(jsonRoot, "exposureSlice", exposureSlice);
+    
     samplesPerPixel = GetConfigValue<int>(jsonRoot, "samplesPerPixel", samplesPerPixel);
     pixelSubSamples = GetConfigValue<int>(jsonRoot, "pixelSubSamples", pixelSubSamples);
     
@@ -44,11 +47,13 @@ bool Config::load(const std::string& path) {
     maxDepth = GetConfigValue<int>(jsonRoot, "maxDepth", maxDepth);
     minRussianRouletteCutOff = GetConfigValue<float>(jsonRoot, "minRussianRouletteCutOff", minRussianRouletteCutOff);
     
+    framebufferStockCount = GetConfigValue<int>(jsonRoot, "framebufferStockCount", framebufferStockCount);
     tileSize = GetConfigValue<int>(jsonRoot, "tileSize", tileSize);
     scrambleTile = GetConfigValue<bool>(jsonRoot, "scrambleTile", scrambleTile);
     
     limitSec = GetConfigValue<double>(jsonRoot, "limitSec", limitSec);
     progressIntervalSec = GetConfigValue<double>(jsonRoot, "progressIntervalSec", progressIntervalSec);
+    maxThreads = GetConfigValue<double>(jsonRoot, "maxThreads", maxThreads);
     
     quietProgress = GetConfigValue<bool>(jsonRoot, "quietProgress", quietProgress);
     waitUntilFinish = GetConfigValue<bool>(jsonRoot, "waitUntilFinish", waitUntilFinish);

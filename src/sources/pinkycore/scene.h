@@ -6,14 +6,15 @@
 #include <memory>
 #include "pptypes.h"
 #include "ray.h"
-#include "mesh.h"
+#include "mesh.h" // for MeshIntersection
 
 namespace PinkyPi {
     
     class AssetLibrary;
     class Node;
     class Camera;
-//    class Mesh;
+    // class Mesh;
+    class Skin;
     class Light;
     
     /////
@@ -50,6 +51,7 @@ namespace PinkyPi {
         
         bool buildForTrace(AssetLibrary *assetlib);
         
+        void seekTime(PPTimeType opentime, PPTimeType closetime, int slice);
         PPFloat intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, SceneIntersection *oisect) const;
         
     private:

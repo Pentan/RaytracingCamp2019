@@ -14,6 +14,7 @@ namespace PinkyPi {
         double framesPerSecond;
         
         double exposureSecond;
+        int exposureSlice;
         
         int samplesPerPixel;
         int pixelSubSamples;
@@ -22,11 +23,13 @@ namespace PinkyPi {
         int maxDepth;
         float minRussianRouletteCutOff;
         
+        int framebufferStockCount;
         int tileSize;
         bool scrambleTile;
         
         double limitSec;
         double progressIntervalSec;
+        int maxThreads;
         
         bool quietProgress;
         bool waitUntilFinish;
@@ -40,15 +43,19 @@ namespace PinkyPi {
             height(270),
             frames(1),
             framesPerSecond(30.0),
+            exposureSecond(0.0),
+            exposureSlice(1),
             samplesPerPixel(4),
             pixelSubSamples(2),
             minDepth(1),
             maxDepth(4),
             minRussianRouletteCutOff(0.005),
+            framebufferStockCount(3),
             tileSize(64),
             scrambleTile(true),
             limitSec(60.0),
             progressIntervalSec(-1.0),
+            maxThreads(0),
             quietProgress(false),
             waitUntilFinish(true),
             inputFile(""),

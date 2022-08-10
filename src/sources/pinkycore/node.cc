@@ -13,8 +13,20 @@ using namespace PinkyPi;
 Node::Node():
     contentType(kContentTypeEmpty)
 {
+    initialTransform.matrix.setIdentity();
+    initialTransform.translate.set(0.0, 0.0, 0.0);
+    initialTransform.rotation.set(0.0, 0.0, 0.0, 1.0);
+    initialTransform.scale.set(1.0, 1.0, 1.0);
+    currentTransform = initialTransform;
 }
 
 Node::~Node() {
     
+}
+
+void Node::Transfom::makeMatrix() {
+    matrix.setIdentity();
+    matrix.translate(translate);
+    matrix = matrix * rotation.getMatrix();
+    matrix.scale(scale);
 }

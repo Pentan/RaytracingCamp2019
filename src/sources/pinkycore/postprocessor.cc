@@ -6,14 +6,14 @@
 
 using namespace PinkyPi;
 
-PostProcessor::PostProcessor(const FrameBuffer *srcbuf) {
+PostProcessor::PostProcessor(const FrameBuffer *srcbuf, const std::string path) {
 }
 
 void PostProcessor::process() {
     
 }
 
-bool PostProcessor::writeToFile(const std::string path) {
+bool PostProcessor::writeToFile() {
     
     return true;
 }

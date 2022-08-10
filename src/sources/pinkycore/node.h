@@ -10,6 +10,7 @@ namespace PinkyPi {
     
     class Camera;
     class Mesh;
+    class Skin;
     class Light;
     
     class Node {
@@ -30,17 +31,29 @@ namespace PinkyPi {
         std::vector<int> children;
         union {
             Camera *camera;
-            Mesh *mesh;
+            struct {
+                Mesh *mesh;
+                struct {
+                    Skin *skin;
+                    int skinId;
+                };
+            };
             Light *light;
         };
-        Matrix4 transform;
         
         ContentType contentType;
         
-//        Matrix4 matrix;
-//        Quaterion rotation;
-//        Vector3 scale;
-//        Vector3 translate;
+        struct Transfom {
+            Matrix4 matrix;
+            Quaterion rotation;
+            Vector3 scale;
+            Vector3 translate;
+            
+            void makeMatrix();
+        };
+        
+        Transfom initialTransform;
+        Transfom currentTransform;
     };
 }
 

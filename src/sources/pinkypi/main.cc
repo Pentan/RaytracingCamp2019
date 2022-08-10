@@ -40,11 +40,11 @@ int main(int argc, char* argv[])
     PinkyPi::Renderer renderer(config, scene);
     renderer.render();
     
-    PinkyPi::PostProcessor pp(renderer.framebuffer);
-    pp.process();
-    if(!pp.writeToFile(config.outputFile)) {
-        std::cerr << "render result write failed:" << config.outputFile << std::endl;
-    }
+//    PinkyPi::PostProcessor pp(renderer.framebuffer);
+//    pp.process();
+//    if(!pp.writeToFile(config.outputFile)) {
+//        std::cerr << "render result write failed:" << config.outputFile << std::endl;
+//    }
     
     delete scene;
     
