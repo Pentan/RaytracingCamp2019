@@ -16,6 +16,7 @@ namespace PinkyPi {
     class Scene;
     class Config;
     class FrameBuffer;
+    class PostProcessor;
     
     class Renderer {
     private:
@@ -39,6 +40,7 @@ namespace PinkyPi {
         struct Context {
             Random random;
             FrameBuffer* framebuffer;
+            PostProcessor* postprocessor;
         };
         
         std::vector<Context> renderContexts;
@@ -97,6 +99,7 @@ namespace PinkyPi {
         
     public:
         std::vector<std::unique_ptr<FrameBuffer> > framebuffers;
+        std::vector<std::unique_ptr<PostProcessor> > postprocessors;
         Scene *scene;
         
     public:
@@ -120,12 +123,13 @@ namespace PinkyPi {
         std::vector<std::thread> workerPool;
         std::vector<WorkerInfo> workerInfos;
         std::queue<JobCommand> commandQueue;
+        std::queue<JobCommand> interruptQueue;
         std::mutex commandQueueMutex;
         std::condition_variable workerCondition;
         std::condition_variable watcherCondition;
         bool stopWorkers;
         
-        void renderOneFrame(FrameBuffer* fb, PPTimeType opentime, PPTimeType closetime);
+        void renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime);
         void saveFrafmebuffer(FrameBuffer* fb, int frameid);
         void processAllCommands();
         void setupWorkers();

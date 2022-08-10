@@ -33,10 +33,14 @@ Renderer::Renderer(const Config& config, Scene* scn):
     scene(scn),
     frameBufferIndex(0)
 {
-    framebuffers.reserve(config.framebufferStockCount);
-    for(int i = 0; i < config.framebufferStockCount; i++) {
+    int numbuffers = config.framebufferStockCount;
+    framebuffers.reserve(numbuffers);
+    postprocessors.reserve(numbuffers);
+    for(int i = 0; i < numbuffers; i++) {
         auto fb = new FrameBuffer(config.width, config.height, config.tileSize);
         framebuffers.push_back(std::unique_ptr<FrameBuffer>(fb));
+        auto pp = new PostProcessor(fb);
+        postprocessors.push_back(std::unique_ptr<PostProcessor>(pp));
     }
     
     samplesPerPixel = config.samplesPerPixel;
@@ -70,7 +74,7 @@ Renderer::~Renderer() {
     cleanupWorkers();
 }
 
-void Renderer::renderOneFrame(FrameBuffer* fb, PPTimeType opentime, PPTimeType closetime) {
+void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime) {
     // scene setup
     scene->seekTime(opentime, closetime, exposureSlice);
     
@@ -80,9 +84,10 @@ void Renderer::renderOneFrame(FrameBuffer* fb, PPTimeType opentime, PPTimeType c
         Context& cntx = renderContexts[i];
         cntx.random.setSeed(seedbase + i * 123456789);
         cntx.framebuffer = fb;
+        cntx.postprocessor = pp;
     }
     
-    // setup jobs
+    // setup render jobs
     int numTiles = fb->getNumTiles();
     {
         std::unique_lock<std::mutex> lock(commandQueueMutex);
@@ -122,9 +127,10 @@ void Renderer::render() {
     for(int i = 0; i < renderFrames; i++) {
         auto fb = framebuffers[frameBufferIndex].get();
         fb->clear();
+        auto pp = postprocessors[frameBufferIndex].get();
         
         PPTimeType t = i / static_cast<PPTimeType>(fps);
-        renderOneFrame(fb, t, t + exposureSec);
+        renderOneFrame(fb, pp, t, t + exposureSec);
         
         // wait
         if(numMaxJobs <= 1) {
@@ -267,9 +273,20 @@ void Renderer::wokerMain(int workerid) {
         info->commandType = CommandType::kNoop;
         {
             std::unique_lock<std::mutex> lock(commandQueueMutex);
-            workerCondition.wait(lock, [this]{ return !commandQueue.empty() || stopWorkers; });
-            cmd = commandQueue.front();
-            commandQueue.pop();
+            workerCondition.wait(lock, [this]{
+                return !commandQueue.empty() || !interruptQueue.empty() || stopWorkers;
+            });
+            
+            if(!stopWorkers) {
+                if(!interruptQueue.empty()) {
+                    cmd = interruptQueue.front();
+                    interruptQueue.pop();
+                } else {
+                    cmd = commandQueue.front();
+                    commandQueue.pop();
+                }
+            }
+            
             watcherCondition.notify_all();
         }
         
@@ -302,6 +319,11 @@ void Renderer::processCommand(int workerid, JobCommand cmd) {
 
 void Renderer::processAllCommands() {
     // for serial exection
+    while(!interruptQueue.empty()) {
+        auto cmd = interruptQueue.front();
+        interruptQueue.pop();
+        processCommand(0, cmd);
+    }
     while(!commandQueue.empty()) {
         auto cmd = commandQueue.front();
         commandQueue.pop();
