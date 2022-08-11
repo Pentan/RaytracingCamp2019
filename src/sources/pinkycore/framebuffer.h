@@ -22,6 +22,11 @@ namespace PinkyPi {
                 sampleCount += 1;
             }
             
+            void setColor(const Color& c) {
+                accumulatedColor = c;
+                sampleCount = 1;
+            }
+            
             Color getColor() {
                 return accumulatedColor / sampleCount;
             }
@@ -61,11 +66,13 @@ namespace PinkyPi {
         
         // buffer offset
         void accumulate(int i, const Color& col);
+        void setColor(int i, const Color& col);
         Color getColor(int i) const;
         Pixel& getPixel(int i) const;
         
         // position
         void accumulate(int x, int y, const Color& col);
+        void setColor(int x, int y, const Color& col);
         Color getColor(int x, int y) const;
         Pixel& getPixel(int x, int y) const;
         

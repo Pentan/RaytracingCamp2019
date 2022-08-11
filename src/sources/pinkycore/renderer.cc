@@ -1,6 +1,8 @@
 #include <ctime>
 #include <iostream>
 #include <sstream>
+#include <ios>
+#include <iomanip>
 #include "renderer.h"
 #include "config.h"
 #include "scene.h"
@@ -39,7 +41,7 @@ Renderer::Renderer(const Config& config, Scene* scn):
     for(int i = 0; i < numbuffers; i++) {
         auto fb = new FrameBuffer(config.width, config.height, config.tileSize);
         framebuffers.push_back(std::unique_ptr<FrameBuffer>(fb));
-        auto pp = new PostProcessor(fb);
+        auto pp = new PostProcessor();
         postprocessors.push_back(std::unique_ptr<PostProcessor>(pp));
     }
     
@@ -60,14 +62,16 @@ Renderer::Renderer(const Config& config, Scene* scn):
     limitSecPerFrame = config.limitSec / config.frames;
     progressIntervalSec = config.progressIntervalSec;
     
-    auto extpos = config.outputFile.rfind(".");
-    if(extpos > 0) {
-        saveNameBase = config.outputFile.substr(0, extpos);
-        saveExt = config.outputFile.substr(extpos);
+    std::string saveDir = config.outputDir;
+    if(saveDir.length() > 0) {
+        if(saveDir[saveDir.length() - 1] != '/') {
+            saveDir += "/";
+        }
+        saveNameBase = saveDir + config.outputName;
     } else {
-        saveNameBase = config.outputFile;
-        saveExt = ".jpg";
+        saveNameBase = config.outputName;
     }
+    saveExt = config.outputExt;
 }
 
 Renderer::~Renderer() {
@@ -101,14 +105,25 @@ void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType ope
     workerCondition.notify_all();
 }
 
-void Renderer::saveFrafmebuffer(FrameBuffer* fb, int frameid) {
+void Renderer::postProcessAndSave(FrameBuffer* fb, PostProcessor* pp, int frameid) {
     std::stringstream ss;
-    ss << saveNameBase << frameid << saveExt;
+    ss << saveNameBase;
+    ss << std::setfill('0') << std::right << std::setw(6);
+    ss << frameid << saveExt;
     auto savepath = ss.str();
     
-    PostProcessor pp(fb, savepath);
-    pp.process();
-    pp.writeToFile();
+    int numjobs = pp->init(fb, savepath, 4096);
+    {
+        std::unique_lock<std::mutex> lock(commandQueueMutex);
+        for(int i = 0; i < numjobs; i++) {
+            JobCommand cmd;
+            cmd.type = CommandType::kPostprocess;
+            cmd.postprocess.processor = pp;
+            cmd.postprocess.jobIndex = i;
+            commandQueue.push(cmd);
+        }
+    }
+    workerCondition.notify_all();
 }
 
 void Renderer::render() {
@@ -125,6 +140,8 @@ void Renderer::render() {
     }
     
     for(int i = 0; i < renderFrames; i++) {
+        std::cout << "frame[" << i << "] start" << std::endl;
+        
         auto fb = framebuffers[frameBufferIndex].get();
         fb->clear();
         auto pp = postprocessors[frameBufferIndex].get();
@@ -140,40 +157,15 @@ void Renderer::render() {
             //
             if(progressIntervalSec > 0.0) {
                 // wait and log output
-                long sleepMilliSec = static_cast<long>(std::min(0.1, progressIntervalSec) * 1000.0);
-                bool waiting = true;
-                double logedtime = 0.0;
-                while (waiting) {
-                    // sleep
-                    std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliSec));
-                    
-                    // check
-                    bool isprocessing = false;
-                    for(auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
-                        if(ite->status == WorkerStatus::kProcessing) {
-                            isprocessing = true;
-                        }
-                    }
-                    waiting = isprocessing | !commandQueue.empty();
-                    
-                    // log
-                    double curtime = getTimeInSeconds();
-                    if(curtime - logedtime > progressIntervalSec) {
-                        // print
-                        logedtime = curtime;
-                    }
-                }
+                waitAllAndLog();
             } else {
                 // condition wait
-                std::unique_lock<std::mutex> lock(commandQueueMutex);
-                watcherCondition.wait(lock, [this]{ return commandQueue.empty(); });
+                waitAllCommands();
             }
         }
         
-        // post process
-        
-        // save frame
-        saveFrafmebuffer(fb, i);
+        // post process and save
+        postProcessAndSave(fb, pp, i);
         if(numMaxJobs <= 1) {
             processAllCommands();
         }
@@ -182,6 +174,9 @@ void Renderer::render() {
         frameBufferIndex = (frameBufferIndex + 1) % framebuffers.size();
     }
     
+    if(numMaxJobs > 1) {
+        waitAllCommands();
+    }
     cleanupWorkers();
 }
 
@@ -253,11 +248,24 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
 }
 
 void Renderer::postprocessJob(int workerid, JobCommand cmd) {
+    auto pp = cmd.postprocess.processor;
+    int remain = pp->process(cmd.postprocess.jobIndex);
     
+    if(remain <= 1) {
+        {
+            std::unique_lock<std::mutex> lock(commandQueueMutex);
+            JobCommand cmd;
+            cmd.type = CommandType::kSaveFile;
+            cmd.save.processor = pp;
+            interruptQueue.push(cmd);
+        }
+        workerCondition.notify_all();
+    }
 }
 
 void Renderer::saveFileJob(int workerid, JobCommand cmd) {
-    
+    auto pp = cmd.save.processor;
+    pp->writeToFile();
 }
 
 void Renderer::startWorker(int workerid, Renderer* rndr) {
@@ -287,7 +295,7 @@ void Renderer::wokerMain(int workerid) {
                 }
             }
             
-            watcherCondition.notify_all();
+            managerCondition.notify_all();
         }
         
         if(stopWorkers) break;
@@ -317,17 +325,66 @@ void Renderer::processCommand(int workerid, JobCommand cmd) {
     }
 }
 
+void Renderer::waitAllCommands() {
+    std::unique_lock<std::mutex> lock(commandQueueMutex);
+    managerCondition.wait(lock, [this]{
+        return commandQueue.empty() && interruptQueue.empty();
+    });
+}
+
+void Renderer::waitAllAndLog() {
+    // wait and log output
+    long sleepMilliSec = static_cast<long>(std::min(0.1, progressIntervalSec) * 1000.0);
+    bool waiting = true;
+    double logedtime = 0.0;
+    while (waiting) {
+        // sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliSec));
+        
+        // check
+        bool isprocessing = false;
+        for(auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
+            if(ite->status == WorkerStatus::kProcessing) {
+                isprocessing = true;
+            }
+        }
+        waiting = isprocessing | !commandQueue.empty() | !interruptQueue.empty();
+        
+        // log
+        double curtime = getTimeInSeconds();
+        if(curtime - logedtime > progressIntervalSec) {
+            // print
+            static const char cmdtbl[CommandType::kNumCommandType] = {
+                'n', 'R', 'P', 'S'
+            };
+            static const char stattbl[WorkerStatus::kNumWorkerStatus] = {
+                '$', '-', '#', '*'
+            };
+            std::stringstream ss;
+            ss << "[" << numMaxJobs << "]:";
+            for(auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
+                auto info = *ite;
+                ss << " " << stattbl[info.status] << cmdtbl[info.commandType];
+            }
+            std::cout << ss.str() << std::endl;
+            
+            logedtime = curtime;
+        }
+    }
+}
+
 void Renderer::processAllCommands() {
     // for serial exection
-    while(!interruptQueue.empty()) {
-        auto cmd = interruptQueue.front();
-        interruptQueue.pop();
-        processCommand(0, cmd);
-    }
-    while(!commandQueue.empty()) {
-        auto cmd = commandQueue.front();
-        commandQueue.pop();
-        processCommand(0, cmd);
+    while(!interruptQueue.empty() || commandQueue.empty()) {
+        if(!interruptQueue.empty()) {
+            auto cmd = interruptQueue.front();
+            interruptQueue.pop();
+            processCommand(0, cmd);
+        } else {
+            auto cmd = commandQueue.front();
+            commandQueue.pop();
+            processCommand(0, cmd);
+        }
     }
 }
 

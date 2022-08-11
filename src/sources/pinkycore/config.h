@@ -35,7 +35,9 @@ namespace PinkyPi {
         bool waitUntilFinish;
         
         std::string inputFile;
-        std::string outputFile;
+        std::string outputDir;
+        std::string outputName;
+        std::string outputExt;
 
     public:
         Config():
@@ -59,7 +61,9 @@ namespace PinkyPi {
             quietProgress(false),
             waitUntilFinish(true),
             inputFile(""),
-            outputFile("output.png")
+            outputDir("output"),
+            outputName("output"),
+            outputExt("png")
         {
         }
         

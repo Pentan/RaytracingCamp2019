@@ -2,6 +2,8 @@
 #define PINKYPI_POSTPROCESSOR_H
 
 #include <string>
+#include <atomic>
+#include <memory>
 
 namespace PinkyPi {
     
@@ -9,10 +11,17 @@ namespace PinkyPi {
     
     class PostProcessor {
     public:
-        PostProcessor(const FrameBuffer *srcbuf);
+        const FrameBuffer* sourceBuffer;
+        std::unique_ptr<FrameBuffer> processedBuffer;
+        std::atomic<int> remainingJobs;
+        std::string savePath;
+        double exportGamma;
         
-        void process();
-        bool writeToFile(const std::string path);
+        PostProcessor();
+        
+        int init(const FrameBuffer *srcbuf, const std::string path, int tilesize);
+        int process(int jobid);
+        bool writeToFile();
     };
 }
 

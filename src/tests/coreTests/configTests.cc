@@ -44,6 +44,8 @@ TEST_CASE("Load test [Config]") {
     REQUIRE_EQ(config.waitUntilFinish, false);
     
     REQUIRE_EQ(config.inputFile, std::string("testinput.gltf"));
-    REQUIRE_EQ(config.outputFile, std::string("testoutput.jpg"));
+    REQUIRE_EQ(config.outputDir, std::string("output"));
+    REQUIRE_EQ(config.outputName, std::string("testoutput"));
+    REQUIRE_EQ(config.outputExt, std::string("jpg"));
 }
 

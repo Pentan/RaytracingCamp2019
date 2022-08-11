@@ -1,0 +1,9 @@
+{
+    "width":320,
+    "height":180,
+    
+    "inputFile": "datas/input.gltf",
+    "outputDir": "output",
+    "outputName": "output",
+    "outputExt": "png"
+}

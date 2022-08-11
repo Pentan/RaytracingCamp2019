@@ -19,5 +19,7 @@
     "quietProgress": true,
     "waitUntilFinish": false,
     "inputFile": "testinput.gltf",
-    "outputFile": "testoutput.jpg"
+    "outputDir": "output",
+    "outputName": "testoutput",
+    "outputExt": "jpg"
 }

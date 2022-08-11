@@ -59,7 +59,9 @@ bool Config::load(const std::string& path) {
     waitUntilFinish = GetConfigValue<bool>(jsonRoot, "waitUntilFinish", waitUntilFinish);
     
     inputFile = GetConfigValue<std::string>(jsonRoot, "inputFile", inputFile);
-    outputFile = GetConfigValue<std::string>(jsonRoot, "outputFile", outputFile);
+    outputDir = GetConfigValue<std::string>(jsonRoot, "outputDir", outputDir);
+    outputName = GetConfigValue<std::string>(jsonRoot, "outputName", outputName);
+    outputExt = GetConfigValue<std::string>(jsonRoot, "outputExt", outputExt);
     
     return true;
 }

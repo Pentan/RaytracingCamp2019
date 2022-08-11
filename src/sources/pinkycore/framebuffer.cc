@@ -55,6 +55,15 @@ void FrameBuffer::accumulate(int x, int y, const Color& col) {
     accumulate(i, col);
 }
 
+void FrameBuffer::setColor(int i, const Color& col) {
+    buffer[i].setColor(col);
+}
+
+void FrameBuffer::setColor(int x, int y, const Color& col) {
+    int i = positionToBufferIndex(x, y);
+    setColor(i, col);
+}
+
 Color FrameBuffer::getColor(int  i) const {
     return buffer[i].getColor();
 }

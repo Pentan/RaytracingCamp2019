@@ -13,12 +13,13 @@ int main(int argc, char* argv[])
 {
     std::cout << "Hellooooo Pinky Pi!\n" << std::endl;
     
-    std::string configPath = "datas/config.json";
+    std::string configPath = "data/config.json";
     PinkyPi::Config config;
     if(!config.load(configPath)) {
         std::cerr << "config load failed. use default settings." << std::endl;
     }
     
+    // check output dir?
     
     PinkyPi::AssetLibrary *assetlib = nullptr;
     PinkyPi::Scene *scene = nullptr;
@@ -39,12 +40,6 @@ int main(int argc, char* argv[])
     
     PinkyPi::Renderer renderer(config, scene);
     renderer.render();
-    
-//    PinkyPi::PostProcessor pp(renderer.framebuffer);
-//    pp.process();
-//    if(!pp.writeToFile(config.outputFile)) {
-//        std::cerr << "render result write failed:" << config.outputFile << std::endl;
-//    }
     
     delete scene;
     

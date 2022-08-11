@@ -72,6 +72,7 @@ namespace PinkyPi {
             kRender,
             kPostprocess,
             kSaveFile,
+            kNumCommandType
         };
         
         struct JobCommand {
@@ -82,6 +83,13 @@ namespace PinkyPi {
                 struct {
                     int tileIndex;
                 } render;
+                struct {
+                    PostProcessor* processor;
+                    int jobIndex;
+                } postprocess;
+                struct {
+                    PostProcessor* processor;
+                } save;
             };
         };
         
@@ -89,7 +97,8 @@ namespace PinkyPi {
             kStart,
             kWaiting,
             kProcessing,
-            kStopped
+            kStopped,
+            kNumWorkerStatus
         };
         
         struct WorkerInfo {
@@ -126,11 +135,13 @@ namespace PinkyPi {
         std::queue<JobCommand> interruptQueue;
         std::mutex commandQueueMutex;
         std::condition_variable workerCondition;
-        std::condition_variable watcherCondition;
+        std::condition_variable managerCondition;
         bool stopWorkers;
         
         void renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime);
-        void saveFrafmebuffer(FrameBuffer* fb, int frameid);
+        void postProcessAndSave(FrameBuffer* fb, PostProcessor* pp, int frameid);
+        void waitAllCommands();
+        void waitAllAndLog();
         void processAllCommands();
         void setupWorkers();
         void cleanupWorkers();
