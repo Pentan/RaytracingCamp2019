@@ -84,9 +84,25 @@ KeyframeSampler::KeyWeights KeyframeSampler::calclateKeyWeights(PPTimeType time)
 }
 
 void KeyframeSampler::sample(PPTimeType time, std::vector<PPFloat>& outbuf) {
-    PPFloat* data;
-    KeyWeights weights = calclateKeyWeights(time);
-    return data;
+    KeyWeights kw = calclateKeyWeights(time);
+    PPFloat* data0 = sampleBuffer.data() + kw.keyindex[0] * sampleComponents;
+    PPFloat* data1 = sampleBuffer.data() + kw.keyindex[1] * sampleComponents;
+
+    outbuf.resize(sampleComponents);
+    for (size_t i = 0; i < sampleComponents; i++) {
+        switch (interpolation) {
+        case kStep:
+            outbuf[i] = data0[i];
+            break;
+        case kCubicSpline:
+            // FIXME
+            // break; // fallback to LINEAR
+        default:
+        case kLinear:
+            outbuf[i] = data0[0] * kw.weights[0] + data1[0] * kw.weights[1];
+            break;
+        }
+    }
 }
 
 Vector3 KeyframeSampler::sampleVector3(PPTimeType time) {
