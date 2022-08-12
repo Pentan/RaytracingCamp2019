@@ -61,7 +61,7 @@ Mesh::Attributes Mesh::Cluster::attributesAt(int i) {
 }
 
 int Mesh::Cluster::attributeCount(AttributeId i) const {
-    return attributeCounts[i];
+    return static_cast<int>(attributeCounts[i]);
 }
 
 PPFloat Mesh::Triangle::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPFloat *obb, PPFloat *obc) const
@@ -157,7 +157,7 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
     }
     
     // blute force -----
-    int numCls = clusters.size();
+    int numCls = static_cast<int>(clusters.size());
     PPFloat mint = -1.0;
     int triId = -1;
     int clusterId = -1;
@@ -167,7 +167,7 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
             continue;
         }
         
-        int numTris = cls->triangles.size();
+        int numTris = static_cast<int>(cls->triangles.size());
         for(int itri = 0; itri < numTris; itri++) {
             const Triangle& tri = cls->triangles[itri];
             PPFloat thit = tri.intersection(ray, nearhit, farhit, nullptr, nullptr);

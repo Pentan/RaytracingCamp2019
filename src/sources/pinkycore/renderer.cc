@@ -83,7 +83,7 @@ void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType ope
     scene->seekTime(opentime, closetime, exposureSlice);
     
     // init contexts
-    unsigned long seedbase = time(NULL);
+    unsigned long seedbase = static_cast<unsigned long>(time(NULL));
     for(int i = 0; i < numMaxJobs; i++) {
         Context& cntx = renderContexts[i];
         cntx.random.setSeed(seedbase + i * 123456789);

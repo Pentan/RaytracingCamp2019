@@ -53,7 +53,7 @@ bool Config::load(const std::string& path) {
     
     limitSec = GetConfigValue<double>(jsonRoot, "limitSec", limitSec);
     progressIntervalSec = GetConfigValue<double>(jsonRoot, "progressIntervalSec", progressIntervalSec);
-    maxThreads = GetConfigValue<double>(jsonRoot, "maxThreads", maxThreads);
+    maxThreads = GetConfigValue<int>(jsonRoot, "maxThreads", maxThreads);
     
     quietProgress = GetConfigValue<bool>(jsonRoot, "quietProgress", quietProgress);
     waitUntilFinish = GetConfigValue<bool>(jsonRoot, "waitUntilFinish", waitUntilFinish);

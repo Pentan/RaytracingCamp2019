@@ -30,8 +30,8 @@ ImageTexture::~ImageTexture() {
 TexcelSample ImageTexture::sample(PPFloat x, PPFloat y) const {
     TexcelSample ret;
     
-    int ix = std::floor(x);
-    int iy = std::floor(y);
+    int ix = static_cast<int>(std::floor(x));
+    int iy = static_cast<int>(std::floor(y));
     PPColorType tx = x - ix;
     PPColorType ty = y - iy;
     

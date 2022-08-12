@@ -12,6 +12,7 @@ endif (PINKYPI_NO_STD_FILESYSTEM)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 add_compile_definitions(_USE_MATH_DEFINES)
+add_compile_definitions(NOMINMAX)
 endif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 set (CMAKE_CXX_STANDARD 17)

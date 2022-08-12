@@ -89,7 +89,12 @@ add_library(PinkyPiApp ${PINLYPI_APP_SRCS})
     ${PINKYPI_THIRDPARTY_DIR}
 )
 
-# executable settings
+# executable settingsset (PLATFORM_DEPEND_LIBS )
+set (PLATFORM_DEPEND_LIBS )
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+set (PLATFORM_DEPEND_LIBS winmm.lib)
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
 add_executable(PinkyPi
     ${PINKYPI_MAIN_DIR}/main.cc
 )
@@ -98,6 +103,7 @@ target_link_libraries(PinkyPi PUBLIC
     PinkyCore
     LinearAlgebra
     ThirdpartyLibs
+    ${PLATFORM_DEPEND_LIBS}
 )
 target_include_directories(PinkyPi PRIVATE
     ${PINKYPI_SOURCE_DIR}

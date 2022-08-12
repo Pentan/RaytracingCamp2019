@@ -48,6 +48,11 @@ set(THIRDPARTY_DOCTEST_SRCS
 source_group(doctest FILES ${THIRDPARTY_DOCTEST_SRCS})
 
 # exectable
+set (PLATFORM_DEPEND_LIBS )
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+set (PLATFORM_DEPEND_LIBS winmm.lib)
+endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
 add_executable(PinkyPiTests
     testmain.cc
     testsupport.cc
@@ -63,6 +68,7 @@ target_link_libraries(PinkyPiTests PRIVATE
     PinkyCore
     PinkyPiApp
     ThirdpartyLibs
+    ${PLATFORM_DEPEND_LIBS}
 )
 target_include_directories(PinkyPiTests PRIVATE
     ${PINKYPI_SOURCE_DIR}

@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"

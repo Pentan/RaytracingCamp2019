@@ -40,7 +40,7 @@ namespace {
     // Utikity Classes
     class BufferAccessor {
     private:
-        unsigned char* bufferPtr;
+        const unsigned char* bufferPtr;
         size_t byteStride;
         size_t componentSize;
         int componentsInStruct;
@@ -75,13 +75,13 @@ namespace {
         }
         
         void init(const tinygltf::Accessor& accessor, const tinygltf::Model& model) {
-            auto bufferview = model.bufferViews[accessor.bufferView];
-            auto buffer = model.buffers[bufferview.buffer];
+            auto& bufferview = model.bufferViews[accessor.bufferView];
+            auto& buffer = model.buffers[bufferview.buffer];
             
             size_t offset = bufferview.byteOffset + accessor.byteOffset;
             bufferPtr = buffer.data.data() + offset;
             byteStride = bufferview.byteStride;
-            structCount = accessor.count;
+            structCount = static_cast<int>(accessor.count);
             
             switch (accessor.type) {
                 case TINYGLTF_TYPE_SCALAR:
@@ -115,35 +115,35 @@ namespace {
             switch (accessor.componentType) {
                 case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                     componentSize = 1;
-                    componentNormalizer = 1.0 / float(0xff);
+                    componentNormalizer = 1.0f / float(0xff);
                     getCompFloat = &BufferAccessor::getT<float, unsigned char>;
                     getCompInt = &BufferAccessor::getT<int, unsigned char>;
                     break;
                     
                 case TINYGLTF_COMPONENT_TYPE_BYTE:
                     componentSize = 1;
-                    componentNormalizer = 1.0 / float(0x7f);
+                    componentNormalizer = 1.0f / float(0x7f);
                     getCompFloat = &BufferAccessor::getT<float, char>;
                     getCompInt = &BufferAccessor::getT<int, char>;
                     break;
                     
                 case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                     componentSize = 2;
-                    componentNormalizer = 1.0 / float(0xffff);
+                    componentNormalizer = 1.0f / float(0xffff);
                     getCompFloat = &BufferAccessor::getT<float, unsigned short>;
                     getCompInt = &BufferAccessor::getT<int, unsigned short>;
                     break;
                     
                 case TINYGLTF_COMPONENT_TYPE_SHORT:
                     componentSize = 2;
-                    componentNormalizer = 1.0 / float(0x7fff);
+                    componentNormalizer = 1.0f / float(0x7fff);
                     getCompFloat = &BufferAccessor::getT<float, short>;
                     getCompInt = &BufferAccessor::getT<int, short>;
                     break;
                     
                 case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                     componentSize = 4;
-                    componentNormalizer = 1.0 / float(0x7fffffff);
+                    componentNormalizer = 1.0f / float(0x7fffffff);
                     getCompFloat = &BufferAccessor::getT<float, long>;
                     getCompInt = &BufferAccessor::getT<int, long>;
                     break;
@@ -151,7 +151,7 @@ namespace {
                 default:
                 case TINYGLTF_COMPONENT_TYPE_FLOAT:
                     componentSize = 4;
-                    componentNormalizer = 1.0;
+                    componentNormalizer = 1.0f;
                     getCompFloat = &BufferAccessor::getT<float, float>;
                     getCompInt = &BufferAccessor::getT<int, float>;
                     break;
@@ -160,6 +160,21 @@ namespace {
             if(byteStride == 0) {
                 byteStride = componentSize * componentsInStruct;
             }
+            rewind();
+        }
+
+        template<typename T>
+        void initWithData(const void* data, int dataCount, int cmpsInStrust, int stride=0, unsigned int fltdiv=1) {
+            bufferPtr = static_cast<const unsigned char*>(data);
+            componentSize = sizeof(T);
+            componentsInStruct = cmpsInStrust;
+            structCount = dataCount;
+            componentNormalizer = 1.0f / static_cast<float>(fltdiv);
+            byteStride = (stride > 0) ? stride : componentSize * componentsInStruct;
+
+            getCompFloat = &BufferAccessor::getT<float, T>;
+            getCompInt = &BufferAccessor::getT<int, T>;
+
             rewind();
         }
         
@@ -224,21 +239,21 @@ namespace {
         if(val.IsArray()) {
             size_t n = val.ArrayLen();
             for(size_t i = 0; i < n; i++) {
-                auto v = FindPinkyPiExtra(val.Get(i));
+                auto& v = FindPinkyPiExtra(val.Get(static_cast<int>(i)));
                 if(v.Type() != tinygltf::NULL_TYPE) {
                     return v;
                 }
             }
             
         } else if(val.IsObject()) {
-            auto keys = val.Keys();
+            auto& keys = val.Keys();
             for(auto ite = keys.begin(); ite != keys.end(); ++ite) {
-                auto k = *ite;
+                auto& k = *ite;
                 if(k.compare(kExtraKey) == 0) {
                     return val.Get(kExtraKey);
                     
                 } else {
-                    auto v = val.Get(k);
+                    auto& v = val.Get(k);
                     if(v.IsObject() || v.IsArray()) {
                         return FindPinkyPiExtra(v);
                     }
@@ -262,10 +277,10 @@ namespace {
             const tinygltf::Image& gltfimg = model.images.at(gltftex.source);
             
             double gamma = 2.2;
-            auto ppextra = FindPinkyPiExtra(gltfimg.extras);
+            auto& ppextra = FindPinkyPiExtra(gltfimg.extras);
             if(ppextra.Type() != tinygltf::NULL_TYPE) {
                 if(ppextra.Has("gamma")) {
-                    auto val = ppextra.Get("gamma");
+                    auto& val = ppextra.Get("gamma");
                     gamma = val.IsInt()? val.Get<int>() : val.Get<double>();
                 }
             }
@@ -370,7 +385,7 @@ namespace {
             
             // "pbrMetallicRoughness"
             for(auto valite = gltfmat.values.begin(); valite != gltfmat.values.end(); ++valite) {
-                auto kv = *valite;
+                auto &kv = *valite;
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
@@ -381,7 +396,7 @@ namespace {
                     mat->baseColorTexture.texture = assetlib->textures[val.TextureIndex()].get();
                     
                 } else if(key.compare("baseColorFactor") == 0) {
-                    auto col = val.ColorFactor();
+                    auto& col = val.ColorFactor();
                     mat->baseColorFactor = Color(col.at(0), col.at(1), col.at(2));
                     mat->baseColorAlpha = col.at(3);
                     
@@ -400,7 +415,7 @@ namespace {
 
             // additional
             for(auto valite = gltfmat.additionalValues.begin(); valite != gltfmat.additionalValues.end(); ++valite) {
-                auto kv = *valite;
+                auto& kv = *valite;
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
@@ -419,11 +434,11 @@ namespace {
                     mat->emissiveTexture.texture = assetlib->textures[val.TextureIndex()].get();
                     
                 } else if(key.compare("emissiveFactor") == 0) {
-                    auto col = val.ColorFactor();
+                    auto& col = val.ColorFactor();
                     mat->emissiveFactor = Color(col.at(0), col.at(1), col.at(2));
                     
                 } else if(key.compare("alphaMode") == 0) {
-                    auto amode = val.string_value;
+                    const auto& amode = val.string_value;
                     if(amode.compare("OPAQUE") == 0) {
                         mat->alphaMode = Material::kAlphaAsOpaque;
                     } else if(amode.compare("MASK") == 0) {
@@ -444,7 +459,7 @@ namespace {
             }
             
             // extra
-            auto ppextra = FindPinkyPiExtra(gltfmat.extras);
+            auto& ppextra = FindPinkyPiExtra(gltfmat.extras);
             if(ppextra.Type() != tinygltf::NULL_TYPE) {
                 if(ppextra.Has("ior")) {
                     mat->ior = ppextra.Get("ior").Get<PPFloat>();
@@ -467,21 +482,21 @@ namespace {
         assetlib->meshes.reserve(model.meshes.size());
         
         for(auto ite = model.meshes.begin(); ite != model.meshes.end(); ++ite) {
-            auto gltfmesh = *ite;
-            auto gltfprims = gltfmesh.primitives;
+            auto& gltfmesh = *ite;
+            auto& gltfprims = gltfmesh.primitives;
             
             if(gltfprims.size() <= 0) {
                 continue;
             }
             
-            auto mesh = new Mesh();
+            auto* mesh = new Mesh();
             mesh->clusters.reserve(gltfprims.size());
             
             int primCount = 0;
             int totalVerts = 0;
             int totalTris = 0;
             for(auto prmite = gltfprims.begin(); prmite != gltfprims.end(); ++prmite) {
-                auto gltfprimitive = *prmite;
+                auto& gltfprimitive = *prmite;
                 
                 // Vertex
                 int accid;
@@ -495,7 +510,7 @@ namespace {
                 int numWeights = 0;
                 int numColors = 0;
                 for (auto kv : gltfprimitive.attributes) {
-                    auto key = kv.first;
+                    auto& key = kv.first;
 
                     if (key.compare("POSITION") == 0) {
                         accid = gltfprimitive.attributes.at("POSITION");
@@ -545,7 +560,7 @@ namespace {
                 };
 
                 for (int iba = 0; iba < 4; iba++) {
-                    auto baptr = batbl[iba];
+                    auto* baptr = batbl[iba];
                     for (size_t iattr = 0; iattr < baptr->size(); iattr++) {
                         attrNameSS.str("");
                         attrNameSS << attrtbl[iba] << iattr;
@@ -560,12 +575,66 @@ namespace {
                 }
                 
                 // Triangle
-                BufferAccessor indba(model.accessors[gltfprimitive.indices], model);
-                
                 int numverts = posba.getStructCount();
+
+                BufferAccessor indba;
+                std::vector<int> tmpindice;
+
+                if (gltfprimitive.indices >= 0) {
+                    indba.init(model.accessors[gltfprimitive.indices], model);
+                } else {
+                    const char* errmodes[] = {
+                        "POINT", "LINES", "LINE_LOOP", "LINE_STRIP"
+                    };
+
+                    switch (gltfprimitive.mode)
+                    {
+                    case TINYGLTF_MODE_TRIANGLES:
+                        tmpindice.resize(numverts);
+                        for (size_t iind = 0; iind < tmpindice.size(); iind++) {
+                            tmpindice[iind] = static_cast<int>(iind);
+                        }
+                        break;
+                    case TINYGLTF_MODE_TRIANGLE_STRIP:
+                    {
+                        int numtris = numverts - 2;
+                        tmpindice.resize(numtris * 3);
+                        const int indoffsets[2][3] = { {0, 1, 2}, {2, 0, 1} };
+                        for (int itri = 0; itri < numtris; itri ++) {
+                            int iind = itri * 3;
+                            const int* ofst = indoffsets[itri & 1];
+                            tmpindice[iind + ofst[0]] = itri;
+                            tmpindice[iind + ofst[1]] = itri + 1;
+                            tmpindice[iind + ofst[2]] = itri + 2;
+                        }
+                    }
+                        break;
+                    case TINYGLTF_MODE_TRIANGLE_FAN:
+                    {
+                        int numtris = (numverts - 1) / 2;
+                        tmpindice.resize(numtris * 3);
+                        for (int itri = 0; itri < numtris; itri++) {
+                            int iind = itri * 3;
+                            tmpindice[iind] = 0;
+                            tmpindice[iind] = itri + 1;
+                            tmpindice[iind] = itri + 2;
+                        }
+                    }
+                        break;
+                    default:
+                        std::cerr << "glTF primitive mode " << errmodes[gltfprimitive.mode] << "(" << gltfprimitive.mode << ") not supported." << std::endl;
+                        tmpindice.resize(3);
+                        tmpindice[0] = 0;
+                        tmpindice[1] = 0;
+                        tmpindice[2] = 0;
+                        break;
+                    }
+
+                    indba.initWithData<int>(tmpindice.data(), static_cast<int>(tmpindice.size()), 1);
+                }
+
                 int numtris = indba.getStructCount() / 3;
-                
-                auto cluster = new Mesh::Cluster(numverts, numtris, attrMap);
+                auto* cluster = new Mesh::Cluster(numverts, numtris, attrMap);
                 
                 for(int iv = 0; iv < numverts; iv++) {
                     Vector3 &v = cluster->vertices[iv];
@@ -666,14 +735,14 @@ namespace {
         assetLib->skins.reserve(model.skins.size());
         
         for(auto ite = model.skins.begin(); ite != model.skins.end(); ++ite) {
-            auto gltfskin = *ite;
-            auto skin = new Skin();
+            auto& gltfskin = *ite;
+            auto* skin = new Skin();
             
             if(gltfskin.name.size() > 0) {
                 skin->name = gltfskin.name;
             }
             
-            int jointcount = gltfskin.joints.size();
+            int jointcount = static_cast<int>(gltfskin.joints.size());
             skin->jointNodes.reserve(jointcount);
             for(auto jntite = gltfskin.joints.begin(); jntite != gltfskin.joints.end(); ++jntite) {
                 skin->jointNodes.push_back(assetLib->nodes[*jntite].get());
@@ -706,13 +775,13 @@ namespace {
         
         // assign skin objects
         for(auto ite = assetLib->nodes.begin(); ite != assetLib->nodes.end(); ++ite) {
-            auto node = *ite;
+            auto* node = ite->get();
             if(node->contentType == Node::kContentTypeMesh) {
                 node->skin = (node->skinId < 0) ? nullptr : assetLib->skins[node->skinId].get();
             }
         }
 
-        return assetLib->skins.size();
+        return static_cast<int>(assetLib->skins.size());
     }
 
     int ParseAnimations(const tinygltf::Model& model, AssetLibrary* assetLib) {
@@ -722,8 +791,8 @@ namespace {
         assetLib->animations.reserve(model.animations.size());
         
         for(auto ite = model.animations.begin(); ite != model.animations.end(); ++ite) {
-            auto gltfanim = *ite;
-            auto anim = new Animation();
+            auto& gltfanim = *ite;
+            auto* anim = new Animation();
             
             if(gltfanim.name.size() > 0) {
                 anim->name = gltfanim.name;
@@ -732,8 +801,8 @@ namespace {
             // samplers
             anim->samplers.reserve(gltfanim.samplers.size());
             for(auto smpite = gltfanim.samplers.begin(); smpite != gltfanim.samplers.end(); ++ smpite) {
-                auto gltfsampler = *smpite;
-                auto kfsampler = new KeyframeSampler();
+                auto& gltfsampler = *smpite;
+                auto* kfsampler = new KeyframeSampler();
                 
                 BufferAccessor inputba(model.accessors[gltfsampler.input], model);
                 BufferAccessor outputba(model.accessors[gltfsampler.output], model);
@@ -769,12 +838,12 @@ namespace {
             anim->targets.resize(chcount);
             int ich = 0;
             for(auto chite = gltfanim.channels.begin(); chite != gltfanim.channels.end(); ++chite, ++ich) {
-                auto gltfch = *chite;
+                auto& gltfch = *chite;
                 auto& targetch = anim->targets[ich];
                 
                 targetch.sampler = anim->samplers[gltfch.sampler].get();
                 targetch.node = assetLib->nodes[gltfch.target_node].get();
-                auto chpath = gltfch.target_path;
+                const auto& chpath = gltfch.target_path;
                 if(chpath.compare("translation") == 0) {
                     targetch.targetProp = Animation::kTranslation;
                 } else if(chpath.compare("rotation") == 0) {
@@ -796,9 +865,9 @@ namespace {
     int ParseLights(const tinygltf::Model& model, AssetLibrary *assetlib) {
         int count = 0;
         for(auto ite = model.lights.begin(); ite != model.lights.end(); ++ite) {
-            auto gltflight = *ite;
+            auto& gltflight = *ite;
             
-            auto lit = new Light();
+            auto* lit = new Light();
             lit->name = gltflight.name;
             
             if(gltflight.color.size() > 0) {
@@ -828,11 +897,11 @@ namespace {
             return 0;
         }
         
-        auto khr_lights = model.extensions.at("KHR_lights_punctual");
+        auto& khr_lights = model.extensions.at("KHR_lights_punctual");
         if(!khr_lights.Has("lights")) {
             return 0;
         }
-        auto lights = khr_lights.Get("lights");
+        auto& lights = khr_lights.Get("lights");
         if(!lights.IsArray()) {
             return 0;
         }
@@ -843,23 +912,23 @@ namespace {
         assetlib->lights.reserve(lights.ArrayLen());
         
         for(int ilit = 0; ilit < lights.ArrayLen(); ilit++) {
-            auto lit_punc = lights.Get(ilit);
+            auto& lit_punc = lights.Get(ilit);
             if(!lit_punc.IsObject()) {
                 continue;
             }
             
-            auto lit = new Light();
+            auto* lit = new Light();
             
             if(lit_punc.Has("name")) {
                 lit->name = lit_punc.Get("name").Get<std::string>();
             }
             
             if(lit_punc.Has("color")) {
-                auto col = lit_punc.Get("color");
+                auto& col = lit_punc.Get("color");
                 if(col.IsArray()) {
-                    auto r = col.Get(0);
-                    auto g = col.Get(1);
-                    auto b = col.Get(2);
+                    auto& r = col.Get(0);
+                    auto& g = col.Get(1);
+                    auto& b = col.Get(2);
                     lit->color.set(
                         r.IsInt()? r.Get<int>() : r.Get<double>(),
                         g.IsInt()? g.Get<int>() : g.Get<double>(),
@@ -869,7 +938,7 @@ namespace {
             }
             
             if(lit_punc.Has("intensity")) {
-                auto val = lit_punc.Get("intensity");
+                auto& val = lit_punc.Get("intensity");
                 lit->intensity = val.IsInt()? val.Get<int>() : val.Get<double>();
             }
             
@@ -890,14 +959,14 @@ namespace {
             }
             
             if(lit_punc.Has("spot")) {
-                auto spot = lit_punc.Get("spot");
+                auto& spot = lit_punc.Get("spot");
                 if(spot.IsObject()) {
                     if(spot.Has("innerConeAngle")) {
-                        auto val = spot.Get("innerConeAngle");
+                        auto& val = spot.Get("innerConeAngle");
                         lit->spot.innerConeAngle = val.IsInt()? val.Get<int>() : val.Get<double>();
                     }
                     if(spot.Has("outerConeAngle")) {
-                        auto val = spot.Get("outerConeAngle");
+                        auto& val = spot.Get("outerConeAngle");
                         lit->spot.innerConeAngle = val.IsInt()? val.Get<int>() : val.Get<double>();
                     }
                 }
@@ -917,14 +986,14 @@ namespace {
         assetlib->cameras.reserve(model.cameras.size());
         
         for(auto ite = model.cameras.begin(); ite != model.cameras.end(); ++ite) {
-            auto gltfcam = *ite;
+            auto& gltfcam = *ite;
             
             Camera *cam = new Camera();
             cam->name = gltfcam.name;
             
             if (gltfcam.type.compare("perspective") == 0) {
                 cam->initWithType(Camera::kPerspectiveCamera);
-                auto gltfpers = gltfcam.perspective;
+                auto& gltfpers = gltfcam.perspective;
                 cam->perspective.aspect = gltfpers.aspectRatio;
                 cam->perspective.yfov = gltfpers.yfov;
                 cam->perspective.zfar = gltfpers.zfar;
@@ -932,7 +1001,7 @@ namespace {
                 
             } else if (gltfcam.type.compare("orthographic") == 0) {
                 cam->initWithType(Camera::kOrthographicsCamera);
-                auto gltfortho = cam->orthographics;
+                auto& gltfortho = cam->orthographics;
                 cam->orthographics.xmag = gltfortho.xmag;
                 cam->orthographics.ymag = gltfortho.ymag;
                 cam->orthographics.zfar = gltfortho.zfar;
@@ -943,7 +1012,7 @@ namespace {
                 continue;
             }
             
-            auto ppextra = FindPinkyPiExtra(gltfcam.extras);
+            auto& ppextra = FindPinkyPiExtra(gltfcam.extras);
             if(ppextra.Type() != tinygltf::NULL_TYPE) {
                 if(ppextra.Has("focalLength")) {
                     cam->focalLength = ppextra.Get("focalLength").Get<PPFloat>();
@@ -971,9 +1040,9 @@ namespace {
         assetlib->nodes.reserve(model.nodes.size());
         
         for(auto ite = model.nodes.begin(); ite != model.nodes.end(); ++ite) {
-            auto gltfnode = *ite;
+            auto& gltfnode = *ite;
             
-            auto node = new Node();
+            auto* node = new Node();
             node->name = gltfnode.name;
             
             // get transform
@@ -1009,7 +1078,7 @@ namespace {
             }
             
             if(gltfnode.matrix.size() > 0) {
-                auto mat = gltfnode.matrix;
+                auto& mat = gltfnode.matrix;
                 node->initialTransform.matrix.set(
                     mat[0], mat[1], mat[2], mat[3],
                     mat[4], mat[5], mat[6], mat[7],
@@ -1041,11 +1110,11 @@ namespace {
                 }
             }
             
-            auto extensions = gltfnode.extensions;
+            auto& extensions = gltfnode.extensions;
             if(extensions.find("KHR_lights_punctual") != extensions.end()) {
-                auto lit_punk = extensions.at("KHR_lights_punctual");
+                auto& lit_punk = extensions.at("KHR_lights_punctual");
                 if(lit_punk.IsObject()) {
-                    auto litid = lit_punk.Get("light");
+                    auto& litid = lit_punk.Get("light");
                     if(litid.IsInt()) {
                         node->light = assetlib->lights[litid.Get<int>()].get();
                         node->contentType = Node::kContentTypeLight;
@@ -1069,14 +1138,14 @@ namespace {
         assetlib->scenes.reserve(model.scenes.size());
         
         for(auto ite = model.scenes.begin(); ite != model.scenes.end(); ++ite) {
-            auto gltfscene = *ite;
+            auto& gltfscene = *ite;
             
-            auto scn = new Scene();
+            auto* scn = new Scene();
             if(gltfscene.nodes.size() > 0) {
                 scn->nodes.reserve(gltfscene.nodes.size());
                 for(auto nodeite = gltfscene.nodes.begin(); nodeite != gltfscene.nodes.end(); ++nodeite) {
                     int nodeid = *nodeite;
-                    auto node = assetlib->nodes[nodeid].get();
+                    auto* node = assetlib->nodes[nodeid].get();
                     scn->nodes.push_back(node);
                     switch (node->contentType) {
                         case Node::kContentTypeMesh:

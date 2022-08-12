@@ -51,7 +51,7 @@ namespace PinkyPi {
             pixelSubSamples(2),
             minDepth(1),
             maxDepth(4),
-            minRussianRouletteCutOff(0.005),
+            minRussianRouletteCutOff(0.005f),
             framebufferStockCount(3),
             tileSize(64),
             scrambleTile(true),

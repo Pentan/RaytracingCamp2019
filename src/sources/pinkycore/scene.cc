@@ -61,7 +61,7 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, Sce
     
     // blute force -----
     PPFloat mint = -1.0;
-    int numMeshes = meshes.size();
+    int numMeshes = static_cast<int>(meshes.size());
     for(int i = 0; i < numMeshes; i++) {
         MeshIntersection isect;
         PPFloat t = meshes[i]->intersection(ray, hitnear, hitfar, &isect);
