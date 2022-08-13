@@ -19,7 +19,7 @@ namespace PinkyPi {
         
         PostProcessor();
         
-        int init(const FrameBuffer *srcbuf, const std::string path, int tilesize);
+        int init(const FrameBuffer *srcbuf, const std::string path, int tilesize, double gamma);
         int process(int jobid);
         bool writeToFile();
     };

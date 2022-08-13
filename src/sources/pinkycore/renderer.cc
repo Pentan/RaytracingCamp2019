@@ -108,11 +108,11 @@ void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType ope
 void Renderer::postProcessAndSave(FrameBuffer* fb, PostProcessor* pp, int frameid) {
     std::stringstream ss;
     ss << saveNameBase;
-    ss << std::setfill('0') << std::right << std::setw(6);
-    ss << frameid << saveExt;
+    ss << std::setfill('0') << std::right << std::setw(4);
+    ss << frameid << "." << saveExt;
     auto savepath = ss.str();
     
-    int numjobs = pp->init(fb, savepath, 4096);
+    int numjobs = pp->init(fb, savepath, 4096, 2.2);
     {
         std::unique_lock<std::mutex> lock(commandQueueMutex);
         for(int i = 0; i < numjobs; i++) {
@@ -375,7 +375,7 @@ void Renderer::waitAllAndLog() {
 
 void Renderer::processAllCommands() {
     // for serial exection
-    while(!interruptQueue.empty() || commandQueue.empty()) {
+    while(!interruptQueue.empty() || !commandQueue.empty()) {
         if(!interruptQueue.empty()) {
             auto cmd = interruptQueue.front();
             interruptQueue.pop();
