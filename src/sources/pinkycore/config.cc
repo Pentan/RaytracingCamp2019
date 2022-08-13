@@ -66,3 +66,46 @@ bool Config::load(const std::string& path) {
     return true;
 }
 
+void Config::parseOptions(int argc, char* argv[]) {
+    for(int i = 1; i < argc; i++) {
+        char* v = argv[i];
+        bool hasnext = (i + 1) < argc;
+        
+        if(strcmp(v, "-i") == 0 && hasnext) {
+            inputFile = argv[i + 1];
+            i += 1;
+        } else if(strcmp(v, "-on") == 0 && hasnext) {
+            outputName = argv[i + 1];
+            i += 1;
+        } else if(strcmp(v, "-od") == 0 && hasnext) {
+            outputDir = argv[i + 1];
+            i += 1;
+        } else if(strcmp(v, "-oe") == 0 && hasnext) {
+            outputExt = argv[i + 1];
+            i += 1;
+        } else if(strcmp(v, "-j") == 0 && hasnext) {
+            maxThreads = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-w") == 0 && hasnext) {
+            width = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-h") == 0 && hasnext) {
+            height = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-f") == 0 && hasnext) {
+            frames = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-fps") == 0 && hasnext) {
+            framesPerSecond = std::atof(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-s") == 0 && hasnext) {
+            samplesPerPixel = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-ss") == 0 && hasnext) {
+            pixelSubSamples = std::atoi(argv[i + 1]);
+            i += 1;
+        }
+    }
+}
+
+

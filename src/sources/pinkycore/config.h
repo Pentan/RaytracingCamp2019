@@ -68,6 +68,7 @@ namespace PinkyPi {
         }
         
         bool load(const std::string& path);
+        void parseOptions(int argc, char* argv[]);
     };
 }
 

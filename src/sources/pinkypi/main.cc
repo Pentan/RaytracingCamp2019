@@ -18,6 +18,9 @@ int main(int argc, char* argv[])
     if(!config.load(configPath)) {
         std::cerr << "config load failed. use default settings." << std::endl;
     }
+    if(argc > 1) {
+        config.parseOptions(argc, argv);
+    }
     
     // check output dir?
     

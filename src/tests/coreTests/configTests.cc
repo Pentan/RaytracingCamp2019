@@ -49,3 +49,37 @@ TEST_CASE("Load test [Config]") {
     REQUIRE_EQ(config.outputExt, std::string("jpg"));
 }
 
+TEST_CASE("Option test [Config]") {
+    const char* argv[] = {
+        "exectable_name",
+        "-i", "new/input.gltf",
+        "-on", "outname",
+        "-od", "outdir",
+        "-oe", "jpg",
+        "-j", "8",
+        "-w", "640",
+        "-h", "480",
+        "-f", "300",
+        "-fps", "29.98",
+        "-s", "128",
+        "-ss", "5"
+    };
+    int argc = sizeof(argv) / sizeof(argv[0]);
+    
+    Config config;
+    config.parseOptions(argc, const_cast<char**>(argv));
+    
+    REQUIRE_EQ(config.inputFile, std::string(argv[2]));
+    REQUIRE_EQ(config.outputName, std::string(argv[4]));
+    REQUIRE_EQ(config.outputDir, std::string(argv[6]));
+    REQUIRE_EQ(config.outputExt, std::string(argv[8]));
+    
+    REQUIRE_EQ(config.maxThreads, 8);
+    REQUIRE_EQ(config.width, 640);
+    REQUIRE_EQ(config.height, 480);
+    REQUIRE_EQ(config.frames, 300);
+    REQUIRE_EQ(config.framesPerSecond, doctest::Approx(29.98).epsilon(0.001));
+    REQUIRE_EQ(config.samplesPerPixel, 128);
+    REQUIRE_EQ(config.pixelSubSamples, 5);
+    
+}
