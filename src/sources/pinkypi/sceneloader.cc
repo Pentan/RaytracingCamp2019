@@ -246,7 +246,7 @@ namespace {
             }
             
         } else if(val.IsObject()) {
-            auto& keys = val.Keys();
+            const auto& keys = val.Keys();
             for(auto ite = keys.begin(); ite != keys.end(); ++ite) {
                 auto& k = *ite;
                 if(k.compare(kExtraKey) == 0) {
@@ -396,7 +396,7 @@ namespace {
                     mat->baseColorTexture.texture = assetlib->textures[val.TextureIndex()].get();
                     
                 } else if(key.compare("baseColorFactor") == 0) {
-                    auto& col = val.ColorFactor();
+                    const auto& col = val.ColorFactor();
                     mat->baseColorFactor = Color(col.at(0), col.at(1), col.at(2));
                     mat->baseColorAlpha = col.at(3);
                     
@@ -434,7 +434,7 @@ namespace {
                     mat->emissiveTexture.texture = assetlib->textures[val.TextureIndex()].get();
                     
                 } else if(key.compare("emissiveFactor") == 0) {
-                    auto& col = val.ColorFactor();
+                    const auto& col = val.ColorFactor();
                     mat->emissiveFactor = Color(col.at(0), col.at(1), col.at(2));
                     
                 } else if(key.compare("alphaMode") == 0) {
