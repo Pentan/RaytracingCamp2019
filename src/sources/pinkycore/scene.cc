@@ -19,24 +19,9 @@ Scene* Scene::buildDefaultScene() {
     return nullptr;
 }
 
-bool Scene::buildForTrace(AssetLibrary *assetlib) {
-    // traverse nodes
-    Matrix4 m;
-    for(auto i = nodes.begin(); i != nodes.end(); i++) {
-        auto node = *i;
-        traverseNode(node, m, assetlib);
-    }
-    
-    return true;
-}
 
-void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
-    Matrix4 m = gm * node->currentTransform.matrix;
-    for(auto i = node->children.begin(); i != node->children.end(); i++) {
-        auto child = assetlib->nodes.at(*i).get();
-        traverseNode(child, m, assetlib);
-    }
-    
+void Scene::addNode(Node* node) {
+    nodes.push_back(node);
     switch (node->contentType) {
         case Node::kContentTypeMesh:
             if(node->tracable != nullptr) {
@@ -60,6 +45,26 @@ void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
             break;
         default:
             break;
+    }
+}
+
+bool Scene::buildForTrace(AssetLibrary *assetlib) {
+    // traverse nodes
+    Matrix4 m;
+    for(auto i = nodes.begin(); i != nodes.end(); i++) {
+        auto node = *i;
+        traverseNode(node, m, assetlib);
+    }
+    
+    return true;
+}
+
+void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
+    Matrix4 m = gm * node->currentTransform.matrix;
+    // TODO?
+    for(auto i = node->children.begin(); i != node->children.end(); i++) {
+        auto child = assetlib->nodes.at(*i).get();
+        traverseNode(child, m, assetlib);
     }
 }
 

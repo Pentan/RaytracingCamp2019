@@ -773,13 +773,13 @@ namespace {
             assetLib->skins.push_back(std::shared_ptr<Skin>(skin));
         }
         
-        // assign skin objects
-        for(auto ite = assetLib->nodes.begin(); ite != assetLib->nodes.end(); ++ite) {
-            auto* node = ite->get();
-            if(node->contentType == Node::kContentTypeMesh) {
-                node->skin = (node->skinId < 0) ? nullptr : assetLib->skins[node->skinId].get();
-            }
-        }
+        // assign skin objects -> move to ParseScene
+        // for(auto ite = assetLib->nodes.begin(); ite != assetLib->nodes.end(); ++ite) {
+        //     auto* node = ite->get();
+        //     if(node->contentType == Node::kContentTypeMesh) {
+        //         node->skin = (node->skinId < 0) ? nullptr : assetLib->skins[node->skinId].get();
+        //     }
+        // }
 
         return static_cast<int>(assetLib->skins.size());
     }
@@ -1099,7 +1099,7 @@ namespace {
             } else if(gltfnode.mesh >= 0) {
                 node->contentType = Node::kContentTypeMesh;
                 node->mesh = assetlib->meshes[gltfnode.mesh].get();
-                node->skinId = gltfnode.skin; // delay
+                node->skinId = gltfnode.skin; // skin is not parsed here.
             }
             
             size_t numchild = gltfnode.children.size();
@@ -1146,24 +1146,11 @@ namespace {
                 for(auto nodeite = gltfscene.nodes.begin(); nodeite != gltfscene.nodes.end(); ++nodeite) {
                     int nodeid = *nodeite;
                     auto* node = assetlib->nodes[nodeid].get();
-                    scn->nodes.push_back(node);
-                    switch (node->contentType) {
-                        case Node::kContentTypeMesh:
-                            scn->meshes.push_back(node->mesh);
-                            break;
-                        case Node::kContentTypeLight:
-                            scn->lights.push_back(node->light);
-                            break;
-                        case Node::kContentTypeCamera:
-                            scn->cameras.push_back(node->camera);
-                            break;
-                        case Node::kContentTypeEmpty:
-                            // empty node
-                            break;
-                        default:
-                            std::cerr << node->name << " has unknown content type found:" << node->contentType << std::endl;
-                            break;
+                    // resolve skin
+                    if(node->contentType == Node::kContentTypeMesh) {
+                        node->skin = (node->skinId < 0) ? nullptr : assetlib->skins[node->skinId].get();
                     }
+                    scn->addNode(node);
                 }
             }
             

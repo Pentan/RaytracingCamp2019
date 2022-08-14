@@ -6,6 +6,7 @@
 //
 
 #include "node.h"
+#include "tracablestructure.h"
 
 #include "pptypes.h"
 using namespace PinkyPi;
@@ -13,6 +14,7 @@ using namespace PinkyPi;
 Node::Node():
     contentType(kContentTypeEmpty)
 {
+    
     initialTransform.matrix.setIdentity();
     initialTransform.translate.set(0.0, 0.0, 0.0);
     initialTransform.rotation.set(0.0, 0.0, 0.0, 1.0);
@@ -24,7 +26,7 @@ Node::~Node() {
     
 }
 
-void Node::Transfom::makeMatrix() {
+void Node::Transform::makeMatrix() {
     matrix.setIdentity();
     matrix.translate(translate);
     matrix = matrix * rotation.getMatrix();

@@ -50,6 +50,7 @@ namespace PinkyPi {
     public:
         Scene();
         
+        void addNode(Node* node);
         bool buildForTrace(AssetLibrary *assetlib);
         
         void seekTime(PPTimeType opentime, PPTimeType closetime, int slice);
