@@ -12,6 +12,7 @@ namespace PinkyPi {
     class Mesh;
     class Skin;
     class Light;
+    class TracableStructure;
     
     class Node {
     public:
@@ -33,7 +34,7 @@ namespace PinkyPi {
             Camera *camera;
             struct {
                 Mesh *mesh;
-                struct {
+                union {
                     Skin *skin;
                     int skinId;
                 };
@@ -43,7 +44,7 @@ namespace PinkyPi {
         
         ContentType contentType;
         
-        struct Transfom {
+        struct Transform {
             Matrix4 matrix;
             Quaterion rotation;
             Vector3 scale;
@@ -52,8 +53,10 @@ namespace PinkyPi {
             void makeMatrix();
         };
         
-        Transfom initialTransform;
-        Transfom currentTransform;
+        Transform initialTransform;
+        Transform currentTransform;
+        std::vector<Transform> transformCache;
+        std::unique_ptr<TracableStructure> tracable;
     };
 }
 

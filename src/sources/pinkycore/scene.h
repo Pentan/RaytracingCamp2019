@@ -6,16 +6,17 @@
 #include <memory>
 #include "pptypes.h"
 #include "ray.h"
-#include "mesh.h" // for MeshIntersection
+#include "intersection.h"
 
 namespace PinkyPi {
     
     class AssetLibrary;
     class Node;
     class Camera;
-    // class Mesh;
+    class Mesh;
     class Skin;
     class Light;
+    class TracableStructure;
     
     /////
     struct SceneIntersection {
@@ -42,7 +43,7 @@ namespace PinkyPi {
         
     public:
         // for trace
-        std::vector<Mesh*> meshes;
+        std::vector<TracableStructure*> tracables;
         std::vector<Light*> lights;
         std::vector<Camera*> cameras;
         

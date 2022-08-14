@@ -189,3 +189,33 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
     
     return mint;
 }
+
+//
+MeshCache::ClusterCache::ClusterCache(Mesh::Cluster* src) :
+sourceCluster(src)
+{
+    area = 0.0;
+    bounds.clear();
+    cachedVertices.resize(sourceCluster->vertices.size());
+    for(size_t i = 0; i < sourceCluster->vertices.size(); i++) {
+        Mesh::Attributes attrs = sourceCluster->attributesAt(i);
+        cachedVertices[i].vertex = sourceCluster->vertices[i];
+        cachedVertices[i].normal = *attrs.normal;
+        cachedVertices[i].tangent = *attrs.tangent;
+        bounds.expand(cachedVertices[i].vertex);
+    }
+}
+
+void MeshCache::ClusterCache::makeTransformed(const Matrix4& m) {
+    area = 0.0;
+    bounds.clear();
+    for(size_t i = 0; i < sourceCluster->vertices.size(); i++) {
+        Mesh::Attributes attrs = sourceCluster->attributesAt(i);
+        cachedVertices[i].vertex = Matrix4::transformV3(m, sourceCluster->vertices[i]);
+        cachedVertices[i].normal = Matrix4::mulV3(m, *attrs.normal);
+        Vector3 tmpv3(attrs.tangent->x, attrs.tangent->y, attrs.tangent->z);
+        tmpv3 = Matrix4::mulV3(m, tmpv3);
+        cachedVertices[i].tangent.set(tmpv3.x, tmpv3.y, tmpv3.z, attrs.tangent->w);
+        bounds.expand(cachedVertices[i].vertex);
+    }
+}

@@ -40,6 +40,7 @@ list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/animation.cc
     ${PINKYPI_CORE_DIR}/keyframesampler.cc
     ${PINKYPI_CORE_DIR}/skin.cc
+    ${PINKYPI_CORE_DIR}/tracablestructure.cc
 )
 list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/pptypes.h
@@ -63,6 +64,8 @@ list(APPEND PINKYPI_CORE_SRCS
     ${PINKYPI_CORE_DIR}/animation.h
     ${PINKYPI_CORE_DIR}/keyframesampler.h
     ${PINKYPI_CORE_DIR}/skin.h
+    ${PINKYPI_CORE_DIR}/tracablestructure.h
+    ${PINKYPI_CORE_DIR}/intersection.h
 )
 
 add_library(PinkyCore ${PINKYPI_CORE_SRCS})

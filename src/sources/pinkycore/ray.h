@@ -32,6 +32,5 @@ namespace PinkyPi {
             return direction * t + origin;
         }
     };
-
 }
 #endif

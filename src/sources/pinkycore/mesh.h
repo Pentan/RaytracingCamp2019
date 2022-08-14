@@ -7,19 +7,15 @@
 #include <map>
 #include "pptypes.h"
 #include "ray.h"
+#include "intersection.h"
 #include "aabb.h"
+#include "tracablestructure.h"
 
 namespace PinkyPi {
     
     /////
     class Material;
     class BVH;
-    
-    /////
-    struct MeshIntersection {
-        int clusterId;
-        int triangleId;
-    };
     
     /////
     class Mesh {
@@ -107,6 +103,30 @@ namespace PinkyPi {
         void preprocess();
         
         PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const;
+    };
+    
+    //
+    class MeshCache {
+    public:
+        MeshCache() {}
+        ~MeshCache() {}
+        
+        class ClusterCache {
+        public:
+            struct CachedAttribute {
+                Vector3 vertex;
+                Vector3 normal;
+                Vector4 tangent;
+            };
+            
+            ClusterCache(Mesh::Cluster* src);
+            void makeTransformed(const Matrix4& m);
+            
+            Mesh::Cluster* sourceCluster;
+            std::vector<CachedAttribute> cachedVertices;
+            PPFloat area;
+            AABB bounds;
+        };
     };
 }
 
