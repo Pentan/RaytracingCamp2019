@@ -16,6 +16,7 @@ namespace PinkyPi {
     /////
     class Material;
     class BVH;
+    class MeshCache;
     
     /////
     class Mesh {
@@ -55,6 +56,7 @@ namespace PinkyPi {
             PPFloat sampleBorder;
             AABB bound;
             
+            void initialize(const Vector3& va, const Vector3& vb, const Vector3& vc);
             PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPFloat *obb, PPFloat *obc) const;
         };
         
@@ -108,9 +110,6 @@ namespace PinkyPi {
     //
     class MeshCache {
     public:
-        MeshCache() {}
-        ~MeshCache() {}
-        
         class ClusterCache {
         public:
             struct CachedAttribute {
@@ -119,14 +118,36 @@ namespace PinkyPi {
                 Vector4 tangent;
             };
             
-            ClusterCache(Mesh::Cluster* src);
-            void makeTransformed(const Matrix4& m);
+            ClusterCache(Mesh::Cluster* src, int numslice);
+            void clearWholeSliceData();
+            void expandWholeTriangleBounds(int sliceid);
+            void createTransformed(int sliceid, const Matrix4& m);
+            void createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt);
             
             Mesh::Cluster* sourceCluster;
-            std::vector<CachedAttribute> cachedVertices;
-            PPFloat area;
-            AABB bounds;
+            // per slice data
+            std::vector<std::vector<CachedAttribute> > cachedVertices;
+            std::vector<PPFloat> sliceArea;
+            std::vector<AABB> sliceBounds;
+
+            // whole slice data
+            AABB wholeBounds;
+            std::vector<AABB> wholeTriBounds;
         };
+
+        Mesh* mesh;
+        std::vector<std::unique_ptr<ClusterCache> > clusterCaches;
+
+        MeshCache(Mesh* m) : mesh(m) {}
+        ~MeshCache() {}
+
+        void createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt) {
+            for (auto ite = clusterCaches.begin(); ite != clusterCaches.end(); ++ite) {
+                ite->get()->createSkinDeformed(sliceid, mplt);
+            }
+        }
+
+        PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const;
     };
 }
 

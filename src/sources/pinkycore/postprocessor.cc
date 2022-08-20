@@ -59,7 +59,7 @@ bool PostProcessor::writeToFile() {
     
     for(int iy = 0; iy < h; iy++) {
         for(int ix = 0; ix < w; ix++) {
-            int ipxl = (ix + iy * w) * 3;
+            int ipxl = (ix + (h - iy - 1) * w) * 3;
             Color col = pfb->getColor(ix, iy);
             rgb8buf[ipxl + 0] = encodeTo8byte(col.r, exportGamma);
             rgb8buf[ipxl + 1] = encodeTo8byte(col.g, exportGamma);

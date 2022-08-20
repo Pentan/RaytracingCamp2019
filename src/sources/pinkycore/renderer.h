@@ -41,6 +41,7 @@ namespace PinkyPi {
             Random random;
             FrameBuffer* framebuffer;
             PostProcessor* postprocessor;
+            PPTimeType exposureTimeRate;
         };
         
         std::vector<Context> renderContexts;

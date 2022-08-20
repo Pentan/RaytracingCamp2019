@@ -6,15 +6,24 @@
 //
 
 #include "node.h"
+#include "mesh.h"
 #include "tracablestructure.h"
 
 #include "pptypes.h"
 using namespace PinkyPi;
 
-Node::Node():
-    contentType(kContentTypeEmpty)
+Node::Node(int i):
+    index(i),
+    contentType(kContentTypeEmpty),
+    animatedFlag(0),
+    parent(nullptr),
+    isTransformDirty(false)
 {
-    
+    // clear content
+    memset(&content, 0, sizeof(content));
+
+    // init transform
+    initialTransform.globalMatrix.setIdentity();
     initialTransform.matrix.setIdentity();
     initialTransform.translate.set(0.0, 0.0, 0.0);
     initialTransform.rotation.set(0.0, 0.0, 0.0, 1.0);
@@ -24,6 +33,38 @@ Node::Node():
 
 Node::~Node() {
     
+}
+
+Matrix4 Node::computeGlobalMatrix(PPTimeType tr) const {
+    if(animatedFlag == 0) {
+        return initialTransform.globalMatrix;
+    } else {
+        Matrix4 pgm;
+        if(parent == nullptr) {
+            pgm.setIdentity();
+        } else {
+            pgm = parent->computeGlobalMatrix(tr);
+        }
+        
+        if((animatedFlag & Node::kAnimatedDirect) == 0) {
+            return pgm * initialTransform.matrix;
+        } else {
+            PPFloat ti = tr * static_cast<float>(transformCache.size() - 1);
+            PPFloat t = std::floor(ti);
+            int i = static_cast<int>(ti - t);
+            Transform tf = Transform::interpolate(transformCache[i], transformCache[i + 1], t);
+            return pgm * tf.matrix;
+        }
+    }
+}
+
+Node::Transform Node::Transform::interpolate(const Transform& tf0, const Transform& tf1, PPFloat t) {
+    Transform ret;
+    ret.translate = Vector3::lerp(tf0.translate, tf1.translate, t);
+    ret.rotation = Quaterion::slerp(tf0.rotation, tf1.rotation, t);
+    ret.scale = Vector3::lerp(tf0.scale, tf1.scale, t);
+    ret.makeMatrix();
+    return ret;
 }
 
 void Node::Transform::makeMatrix() {

@@ -11,6 +11,7 @@
 #include "random.h"
 #include "ray.h"
 #include "postprocessor.h"
+#include "node.h"
 
 using namespace PinkyPi;
 
@@ -80,7 +81,7 @@ Renderer::~Renderer() {
 
 void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime) {
     // scene setup
-    scene->seekTime(opentime, closetime, exposureSlice);
+    scene->seekTime(opentime, closetime, exposureSlice, 0);
     
     // init contexts
     unsigned long seedbase = static_cast<unsigned long>(time(NULL));
@@ -193,14 +194,18 @@ void Renderer::pathtrace(const Ray& ray, const Scene* scn, Context* cntx, Render
     bool isloop = true;
     while(isloop) {
         SceneIntersection interect;
-        PPFloat hitt = scene->intersection(ray, kRayOffset, kFarAway, &interect);
+        PPFloat hitt = scene->intersection(ray, kRayOffset, kFarAway, cntx->exposureTimeRate, &interect);
         if(hitt <= 0.0) {
             // TODO background
             radiance.set(0.5, 0.5, 0.5);
             break;
         }
         
-        
+        //+++++
+        radiance.set(0.2, 0.2, 1.0);
+        break;
+
+        depth += 1;
     }
     
     result->radiance = radiance;
@@ -213,7 +218,8 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
     const FrameBuffer::Tile& tile = cntx->framebuffer->getTile(cmd.render.tileIndex);
     
     PPFloat subPixelSize = 1.0 / pixelSubSamples;
-    Camera *camera = scene->cameras[0];
+    Node* cameraNode = scene->cameras[0];
+    Camera *camera = cameraNode->content.camera;
     
     RenderResult result;
     
@@ -235,8 +241,13 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
                         
                         sx = (sx / cntx->framebuffer->getWidth()) * 2.0 - 1.0;
                         sy = (sy / cntx->framebuffer->getHeight()) * 2.0 - 1.0;
+
+                        Ray ray = camera->getRay(sx, sy, &rng);
+
+                        cntx->exposureTimeRate = rng.nextDoubleCO();
+                        Matrix4 camgm = cameraNode->computeGlobalMatrix(cntx->exposureTimeRate);
                         
-                        Ray ray = camera->getRay(sx, sy);
+                        ray = ray.transformed(camgm);
                         pathtrace(ray, scene, cntx, &result);
                         
                         pixel.accumulate(result.radiance);

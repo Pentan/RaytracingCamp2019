@@ -6,6 +6,7 @@
 #include <memory>
 #include "pptypes.h"
 #include "ray.h"
+#include "random.h"
 
 namespace PinkyPi {
     
@@ -23,8 +24,14 @@ namespace PinkyPi {
         void initWithType(CameraType t);
         
         // tx and ty range is (-1,1)
-        Ray getRay(PPFloat tx, PPFloat ty);
-        
+        Ray getRay(PPFloat tx, PPFloat ty, Random* rng);
+
+        static Ray getThinLensRay(Camera* cam, PPFloat tx, PPFloat ty, Random* rng);
+        static Ray getPerspectiveRay(Camera* cam, PPFloat tx, PPFloat ty, Random* rng);
+        static Ray getOrthoRay(Camera* cam, PPFloat tx, PPFloat ty, Random* rng);
+
+        Ray(*getRayFunc)(Camera*, PPFloat, PPFloat, Random*);
+
         //
         std::string name;
         CameraType type;
@@ -44,7 +51,7 @@ namespace PinkyPi {
                 PPFloat znear;
             } orthographics;
         };
-        
+
         PPFloat focalLength;
         PPFloat fNumber;
         PPFloat focusDistance;

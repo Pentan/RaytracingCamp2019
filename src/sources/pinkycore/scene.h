@@ -17,6 +17,7 @@ namespace PinkyPi {
     class Skin;
     class Light;
     class TracableStructure;
+    class Config;
     
     /////
     struct SceneIntersection {
@@ -39,26 +40,27 @@ namespace PinkyPi {
         static Scene* buildDefaultScene();
         
 //    private:
-        std::vector<Node*> nodes;
-        
+        AssetLibrary* assetLib;
+        std::vector<Node*> topLevelNodes;
+        std::vector<Node*> containsNodes;
+
     public:
         // for trace
-        std::vector<TracableStructure*> tracables;
-        std::vector<Light*> lights;
-        std::vector<Camera*> cameras;
+        std::vector<Node*> tracables;
+        std::vector<Node*> lights;
+        std::vector<Node*> cameras;
         
     public:
-        Scene();
+        Scene(AssetLibrary* al);
         
-        void addNode(Node* node);
-        bool buildForTrace(AssetLibrary *assetlib);
+        bool preprocess(Config* config);
         
-        void seekTime(PPTimeType opentime, PPTimeType closetime, int slice);
-        PPFloat intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, SceneIntersection *oisect) const;
+        void seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int storeId);
+        PPFloat intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPTimeType timerate, SceneIntersection *oisect) const;
         
     private:
-        void traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib);
-        
+        void preprocessTraverse(Node *node, Matrix4 gm, Config* config);
+        void buildAccelerationStructure(int storeId);
     };
 }
 

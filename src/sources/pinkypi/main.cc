@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
         return 0;
     }
     
-    scene->buildForTrace(assetlib);
+    scene->preprocess(&config);
     
     PinkyPi::Renderer renderer(config, scene);
     renderer.render();

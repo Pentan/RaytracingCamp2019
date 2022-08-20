@@ -9,70 +9,138 @@
 #include "mesh.h"
 #include "material.h"
 #include "tracablestructure.h"
+#include "animation.h"
+#include "keyframesampler.h"
+#include "config.h"
 
 using namespace PinkyPi;
 
-Scene::Scene() {
+Scene::Scene(AssetLibrary* al) :
+    assetLib(al)
+{
 }
 
 Scene* Scene::buildDefaultScene() {
     return nullptr;
 }
 
+bool Scene::preprocess(Config* config) {
+    // collect nodes
+    containsNodes.reserve(assetLib->nodes.size());
 
-void Scene::addNode(Node* node) {
-    nodes.push_back(node);
-    switch (node->contentType) {
-        case Node::kContentTypeMesh:
-            if(node->tracable != nullptr) {
-                std::cerr << "WARNING node " << node->name << " already has tracable." << std::endl;
-                node->tracable.reset();
-            }
-            if(node->skin == nullptr) {
-                auto* trc = new SkinMeshStructure(node->mesh, node->skin);
-                node->tracable = std::unique_ptr<TracableStructure>(trc);
-            } else {
-                auto* trc = new StaticMeshStructure(node->mesh);
-                node->tracable = std::unique_ptr<TracableStructure>(trc);
-            }
-            tracables.push_back(node->tracable.get());
-            break;
-        case Node::kContentTypeCamera:
-            cameras.push_back(node->camera);
-            break;
-        case Node::kContentTypeLight:
-            lights.push_back(node->light);
-            break;
-        default:
-            break;
-    }
-}
-
-bool Scene::buildForTrace(AssetLibrary *assetlib) {
-    // traverse nodes
     Matrix4 m;
-    for(auto i = nodes.begin(); i != nodes.end(); i++) {
+    for(auto i = topLevelNodes.begin(); i != topLevelNodes.end(); i++) {
         auto node = *i;
-        traverseNode(node, m, assetlib);
+        preprocessTraverse(node, m, config);
     }
     
     return true;
 }
 
-void Scene::traverseNode(Node *node, Matrix4 gm, AssetLibrary *assetlib) {
-    Matrix4 m = gm * node->currentTransform.matrix;
-    // TODO?
+void Scene::preprocessTraverse(Node *node, Matrix4 gm, Config* config) {
+    Matrix4 m = gm * node->initialTransform.matrix;
+    node->initialTransform.globalMatrix = m;
+    node->currentTransform = node->initialTransform;
+    node->transformCache.resize(config->exposureSlice);
+    containsNodes.push_back(node);
+    
+    switch (node->contentType) {
+        case Node::kContentTypeMesh:
+            node->content.mesh->preprocess();
+            if(node->tracable != nullptr) {
+                std::cerr << "WARNING node " << node->name << " already has tracable." << std::endl;
+                node->tracable.reset();
+            }
+            if(node->content.skin != nullptr) {
+                auto* trc = new SkinMeshStructure(node, node->content.mesh, node->content.skin);
+                trc->initialize(config->exposureSlice);
+                node->tracable = std::unique_ptr<TracableStructure>(trc);
+            } else {
+                auto* trc = new StaticMeshStructure(node, node->content.mesh);
+                trc->initialize(config->exposureSlice);
+                node->tracable = std::unique_ptr<TracableStructure>(trc);
+            }
+            tracables.push_back(node);
+            break;
+        case Node::kContentTypeCamera:
+            cameras.push_back(node);
+            break;
+        case Node::kContentTypeLight:
+            lights.push_back(node);
+            break;
+        default:
+            break;
+    }
+
     for(auto i = node->children.begin(); i != node->children.end(); i++) {
-        auto child = assetlib->nodes.at(*i).get();
-        traverseNode(child, m, assetlib);
+        auto* child = assetLib->nodes.at(*i).get();
+        child->parent = node;
+        if (node->animatedFlag != 0) {
+            child->animatedFlag |= Node::kAnimatedInTree;
+        }
+        preprocessTraverse(child, m, config);
     }
 }
 
-void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice) {
-    
+void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int storeId) {
+    for(int islc = 0; islc < slice; islc++) {
+        PPTimeType t = static_cast<PPTimeType>(islc) / static_cast<PPTimeType>(slice);
+        PPTimeType curtime = opentime * (1.0 - t) + closetime * t;
+        
+        // update node transform
+        for(auto ianim = assetLib->animations.begin(); ianim != assetLib->animations.end(); ++ianim) {
+            auto* anim = ianim->get();
+            for(auto itarget = anim->targets.begin(); itarget != anim->targets.end(); ++itarget) {
+                auto& target = *itarget;
+                switch(target.targetProp) {
+                    case Animation::TargetProperty::kTranslation:
+                        target.node->currentTransform.translate = target.sampler->sampleVector3(curtime);
+                        target.node->isTransformDirty = true;
+                        break;
+                    case Animation::TargetProperty::kRotation:
+                        target.node->currentTransform.rotation = target.sampler->sampleQuaternion(curtime);
+                        target.node->isTransformDirty = true;
+                        break;
+                    case Animation::TargetProperty::kScale:
+                        target.node->currentTransform.scale = target.sampler->sampleVector3(curtime);
+                        target.node->isTransformDirty = true;
+                        break;
+                    case Animation::TargetProperty::kMorphWeights:
+                        // TODO
+                        break;
+                }
+            }
+        }
+        
+        // make global transform
+        for(auto inode = containsNodes.begin(); inode != containsNodes.end(); ++inode) {
+            auto* node = *inode;
+
+            if(node->isTransformDirty) {
+                node->currentTransform.makeMatrix();
+                if(node->parent != nullptr) {
+                    node->currentTransform.globalMatrix = node->parent->currentTransform.globalMatrix * node->currentTransform.matrix;
+                }
+                node->isTransformDirty = false;
+            }
+            node->currentInverseGlobal = Matrix4::inverted(node->currentTransform.globalMatrix, nullptr);
+            node->transformCache[islc] = node->currentTransform;
+        }
+
+        // update traceables
+        for (auto ite = tracables.begin(); ite != tracables.end(); ++ite) {
+            auto* nd = *ite;
+            auto* trc = nd->tracable.get();
+            trc->updateSlice(islc);
+        }
+
+    }
+
+    // build AS
+    buildAccelerationStructure(storeId);
 }
 
-PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, SceneIntersection *oisect) const {
+PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPTimeType timerate, SceneIntersection *oisect) const {
     MeshIntersection meshisect;
     int meshid = -1;
     
@@ -83,7 +151,7 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, Sce
     int numMeshes = static_cast<int>(tracables.size());
     for(int i = 0; i < numMeshes; i++) {
         MeshIntersection isect;
-        PPFloat t = tracables[i]->intersection(ray, hitnear, hitfar, &isect);
+        PPFloat t = tracables[i]->tracable->intersection(ray, hitnear, hitfar, timerate, &isect);
         if(t > 0.0) {
             if(mint > t || mint < 0.0) {
                 mint = t;
@@ -100,4 +168,11 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, Sce
     }
     
     return mint;
+}
+
+void Scene::buildAccelerationStructure(int storeId) {
+    (void)storeId; // TODO multi buffering
+
+
+    // build BVH
 }

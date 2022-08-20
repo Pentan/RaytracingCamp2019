@@ -16,9 +16,6 @@
 
 #include <pinkycore/assetlibrary.h>
 #include <pinkycore/scene.h>
-
-#include "sceneloader.h"
-
 #include <pinkycore/material.h>
 #include <pinkycore/texture.h>
 #include <pinkycore/mesh.h>
@@ -31,13 +28,22 @@
 //#include <pinkycore/>
 //#include <pinkycore/>
 
+#include "sceneloader.h"
+
 using namespace PinkyPi;
 
 namespace {
     // Constants
     std::string kExtraKey = "PinkyPi-Extra";
+
+    // Temporal vars
+    struct SkinedMeshNode {
+        int skinIndex;
+        Node* node;
+    };
+    std::vector<SkinedMeshNode>* skinedMeshNodes;
     
-    // Utikity Classes
+    // Utility Classes
     class BufferAccessor {
     private:
         const unsigned char* bufferPtr;
@@ -389,7 +395,7 @@ namespace {
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
-                std::cerr << key << " found" << std::endl;
+                // std::cerr << key << " found" << std::endl;
                 
                 if(key.compare("baseColorTexture") == 0) {
                     mat->baseColorTexture.texCoord = val.TextureTexCoord();
@@ -419,7 +425,7 @@ namespace {
                 std::string key = kv.first;
                 tinygltf::Parameter val = kv.second;
 
-                std::cerr << key << " found" << std::endl;
+                // std::cerr << key << " found" << std::endl;
                 
                 if(key.compare("normalTexture") == 0) {
                     mat->normalTexture.texCoord = val.TextureTexCoord();
@@ -773,13 +779,11 @@ namespace {
             assetLib->skins.push_back(std::shared_ptr<Skin>(skin));
         }
         
-        // assign skin objects -> move to ParseScene
-        // for(auto ite = assetLib->nodes.begin(); ite != assetLib->nodes.end(); ++ite) {
-        //     auto* node = ite->get();
-        //     if(node->contentType == Node::kContentTypeMesh) {
-        //         node->skin = (node->skinId < 0) ? nullptr : assetLib->skins[node->skinId].get();
-        //     }
-        // }
+        // resolve skins
+        for(auto ite = skinedMeshNodes->begin(); ite != skinedMeshNodes->end(); ++ite) {
+            auto& skinmesh = *ite;
+            skinmesh.node->content.skin = assetLib->skins[skinmesh.skinIndex].get();
+        }
 
         return static_cast<int>(assetLib->skins.size());
     }
@@ -853,6 +857,8 @@ namespace {
                 } else if(chpath.compare("weights") == 0) {
                     targetch.targetProp = Animation::kMorphWeights;
                 }
+
+                targetch.node->animatedFlag = Node::kAnimatedDirect;
             }
             
             assetLib->animations.push_back(std::shared_ptr<Animation>(anim));
@@ -1042,7 +1048,7 @@ namespace {
         for(auto ite = model.nodes.begin(); ite != model.nodes.end(); ++ite) {
             auto& gltfnode = *ite;
             
-            auto* node = new Node();
+            auto* node = new Node(count);
             node->name = gltfnode.name;
             
             // get transform
@@ -1094,12 +1100,19 @@ namespace {
             // node content
             if(gltfnode.camera >= 0) {
                 node->contentType = Node::kContentTypeCamera;
-                node->camera = assetlib->cameras[gltfnode.camera].get();
+                node->content.camera = assetlib->cameras[gltfnode.camera].get();
                 
             } else if(gltfnode.mesh >= 0) {
                 node->contentType = Node::kContentTypeMesh;
-                node->mesh = assetlib->meshes[gltfnode.mesh].get();
-                node->skinId = gltfnode.skin; // skin is not parsed here.
+                node->content.mesh = assetlib->meshes[gltfnode.mesh].get();
+                node->content.skin = nullptr;
+                // skin is not parsed here.
+                if (gltfnode.skin >= 0) {
+                    SkinedMeshNode smn;
+                    smn.node = node;
+                    smn.skinIndex = gltfnode.skin;
+                    skinedMeshNodes->push_back(smn);
+                }
             }
             
             size_t numchild = gltfnode.children.size();
@@ -1116,7 +1129,7 @@ namespace {
                 if(lit_punk.IsObject()) {
                     auto& litid = lit_punk.Get("light");
                     if(litid.IsInt()) {
-                        node->light = assetlib->lights[litid.Get<int>()].get();
+                        node->content.light = assetlib->lights[litid.Get<int>()].get();
                         node->contentType = Node::kContentTypeLight;
                     }
                 }
@@ -1140,17 +1153,14 @@ namespace {
         for(auto ite = model.scenes.begin(); ite != model.scenes.end(); ++ite) {
             auto& gltfscene = *ite;
             
-            auto* scn = new Scene();
+            auto* scn = new Scene(assetlib);
             if(gltfscene.nodes.size() > 0) {
-                scn->nodes.reserve(gltfscene.nodes.size());
+                // scene top level nodes
+                scn->topLevelNodes.reserve(gltfscene.nodes.size());
                 for(auto nodeite = gltfscene.nodes.begin(); nodeite != gltfscene.nodes.end(); ++nodeite) {
                     int nodeid = *nodeite;
                     auto* node = assetlib->nodes[nodeid].get();
-                    // resolve skin
-                    if(node->contentType == Node::kContentTypeMesh) {
-                        node->skin = (node->skinId < 0) ? nullptr : assetlib->skins[node->skinId].get();
-                    }
-                    scn->addNode(node);
+                    scn->topLevelNodes.push_back(node);
                 }
             }
             
@@ -1177,6 +1187,7 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     }
     
     AssetLibrary *assetLib = new AssetLibrary();
+    skinedMeshNodes = new std::vector<SkinedMeshNode>();
     
     ParseTextures(model, assetLib);
     ParseMaterials(model, assetLib);
@@ -1190,5 +1201,6 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     
     assetLib->defaultSceneId = model.defaultScene;
     
+    delete skinedMeshNodes;
     return assetLib;
 }

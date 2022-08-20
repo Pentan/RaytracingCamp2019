@@ -5,6 +5,7 @@
 //  Created by SatoruNAKAJIMA on 2019/08/16.
 //
 
+#include "node.h"
 #include "mesh.h"
 #include "bvh.h"
 #include "pptypes.h"
@@ -64,6 +65,21 @@ int Mesh::Cluster::attributeCount(AttributeId i) const {
     return static_cast<int>(attributeCounts[i]);
 }
 
+
+void Mesh::Triangle::initialize(const Vector3& va, const Vector3& vb, const Vector3& vc) {
+    pa = va;
+    edgeab = vb - va;
+    edgeac = vc - va;
+    Vector3 n = Vector3::cross(edgeab, edgeac);
+    PPFloat nl = n.length();
+    normal = n / std::max(1e-8, nl);
+    area = nl;
+    bound.clear();
+    bound.expand(va);
+    bound.expand(vb);
+    bound.expand(vc);
+}
+
 PPFloat Mesh::Triangle::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPFloat *obb, PPFloat *obc) const
 {
     Vector3 r = ray.origin - pa;
@@ -119,35 +135,20 @@ void Mesh::preprocess() {
             const Vector3& vb = c->vertices.at(tri.b);
             const Vector3& vc = c->vertices.at(tri.c);
             
-            tri.pa = va;
-            tri.edgeab = vb - va;
-            tri.edgeac = vc - va;
-            Vector3 n = Vector3::cross(tri.edgeab, tri.edgeac);
-            PPFloat nl = n.length();
-            tri.normal = n / nl;
-            tri.area =  nl;
+            tri.initialize(va, vb, vc);
             tri.sampleBorder = clusterArea + tri.area;
-            tri.bound.clear();
-            tri.bound.expand(va);
-            tri.bound.expand(vb);
-            tri.bound.expand(vc);
-            
             tri.bound.dataId = icl;
             tri.bound.subDataId = itri;
             
-            c->bounds.expand(va);
-            c->bounds.expand(vb);
-            c->bounds.expand(vc);
-            
-            bounds.expand(va);
-            bounds.expand(vb);
-            bounds.expand(vc);
-            
+            c->bounds.expand(tri.bound);
             clusterArea += tri.area;
         }
         c->area = clusterArea;
+        bounds.expand(c->bounds);
         meshArea += c->area;
     }
+
+    // build BVH ?
 }
 
 PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const
@@ -191,31 +192,132 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
 }
 
 //
-MeshCache::ClusterCache::ClusterCache(Mesh::Cluster* src) :
+MeshCache::ClusterCache::ClusterCache(Mesh::Cluster* src, int numslice) :
 sourceCluster(src)
 {
-    area = 0.0;
-    bounds.clear();
-    cachedVertices.resize(sourceCluster->vertices.size());
-    for(size_t i = 0; i < sourceCluster->vertices.size(); i++) {
-        Mesh::Attributes attrs = sourceCluster->attributesAt(i);
-        cachedVertices[i].vertex = sourceCluster->vertices[i];
-        cachedVertices[i].normal = *attrs.normal;
-        cachedVertices[i].tangent = *attrs.tangent;
-        bounds.expand(cachedVertices[i].vertex);
+    sliceArea.resize(numslice);
+    sliceBounds.resize(numslice);
+    cachedVertices.resize(numslice);
+    
+    wholeTriBounds.resize(sourceCluster->triangles.size());
+    for (size_t i = 0; i < wholeTriBounds.size(); i++) {
+        wholeTriBounds[i].clear();
+        wholeTriBounds[i].dataId = static_cast<int>(i); // triangle index
+    }
+    wholeBounds.clear();
+
+    for (int islc = 0; islc < numslice; islc++) {
+        sliceArea[islc] = 0.0;
+        sliceBounds[islc].clear();
+        auto& cachevert = cachedVertices[islc];
+        cachevert.resize(sourceCluster->vertices.size());
+
+        // initial values
+        for (size_t i = 0; i < sourceCluster->vertices.size(); i++) {
+            Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+            cachevert[i].vertex = sourceCluster->vertices[i];
+            cachevert[i].normal = *attrs.normal;
+            cachevert[i].tangent = *attrs.tangent;
+            sliceBounds[islc].expand(cachevert[i].vertex);
+        }
+
+        expandWholeTriangleBounds(islc);
+        wholeBounds.expand(sliceBounds[islc]);
     }
 }
 
-void MeshCache::ClusterCache::makeTransformed(const Matrix4& m) {
+void MeshCache::ClusterCache::clearWholeSliceData() {
+    wholeBounds.clear();
+    for (auto ite = wholeTriBounds.begin(); ite != wholeTriBounds.end(); ++ite) {
+        ite->clear();
+    }
+}
+
+void MeshCache::ClusterCache::expandWholeTriangleBounds(int sliceid) {
+    Mesh::Triangle tmptri;
+    const auto& cachedvert = cachedVertices[sliceid];
+    auto& area = sliceArea[sliceid];
+
     area = 0.0;
-    bounds.clear();
+    for (size_t i = 0; i < sourceCluster->triangles.size(); i++) {
+        auto& tri = sourceCluster->triangles[i];
+        tmptri.initialize(cachedvert[tri.a].vertex, cachedvert[tri.b].vertex, cachedvert[tri.c].vertex);
+        wholeTriBounds[i].expand(tmptri.bound);
+        area += tmptri.area;
+    }
+}
+
+void MeshCache::ClusterCache::createTransformed(int sliceid, const Matrix4& m) {
+    auto& cachedvert = cachedVertices[sliceid];
+    auto& bnd = sliceBounds[sliceid];
+    bnd.clear();
     for(size_t i = 0; i < sourceCluster->vertices.size(); i++) {
-        Mesh::Attributes attrs = sourceCluster->attributesAt(i);
-        cachedVertices[i].vertex = Matrix4::transformV3(m, sourceCluster->vertices[i]);
-        cachedVertices[i].normal = Matrix4::mulV3(m, *attrs.normal);
+        Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+        cachedvert[i].vertex = Matrix4::transformV3(m, sourceCluster->vertices[i]);
+        cachedvert[i].normal = Matrix4::mulV3(m, *attrs.normal);
         Vector3 tmpv3(attrs.tangent->x, attrs.tangent->y, attrs.tangent->z);
         tmpv3 = Matrix4::mulV3(m, tmpv3);
-        cachedVertices[i].tangent.set(tmpv3.x, tmpv3.y, tmpv3.z, attrs.tangent->w);
-        bounds.expand(cachedVertices[i].vertex);
+        cachedvert[i].tangent.set(tmpv3.x, tmpv3.y, tmpv3.z, attrs.tangent->w);
+        bnd.expand(cachedvert[i].vertex);
     }
+
+    expandWholeTriangleBounds(sliceid);
+    wholeBounds.expand(bnd);
+}
+
+void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt) {
+    auto& cachedvert = cachedVertices[sliceid];
+    auto& bnd = sliceBounds[sliceid];
+    bnd.clear();
+    const int numinfl = sourceCluster->attributeCount(Mesh::AttributeId::kWeights);
+    for (size_t i = 0; i < sourceCluster->vertices.size(); i++) {
+        Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+        PPFloat totalWeights = 0.0;
+
+        const auto& sv = sourceCluster->vertices[i];
+        const auto& sn = *attrs.normal;
+        const Vector3 st(attrs.tangent->x, attrs.tangent->y, attrs.tangent->z);
+
+        Vector3 tmpv;
+        Vector3 tmpn;
+        Vector3 tmpt;
+
+        for (int iinfl = 0; iinfl < numinfl; iinfl++) {
+            const auto& w4 = attrs.weights0[iinfl];
+            const auto& j4 = attrs.joints0[iinfl];
+            
+            tmpv += Matrix4::transformV3(mplt[j4.x], sv) * w4.x;
+            tmpv += Matrix4::transformV3(mplt[j4.y], sv) * w4.y;
+            tmpv += Matrix4::transformV3(mplt[j4.z], sv) * w4.z;
+            tmpv += Matrix4::transformV3(mplt[j4.w], sv) * w4.w;
+
+            tmpn += Matrix4::mulV3(mplt[j4.x], sn) * w4.x;
+            tmpn += Matrix4::mulV3(mplt[j4.y], sn) * w4.y;
+            tmpn += Matrix4::mulV3(mplt[j4.z], sn) * w4.z;
+            tmpn += Matrix4::mulV3(mplt[j4.w], sn) * w4.w;
+
+            tmpt += Matrix4::mulV3(mplt[j4.x], st) * w4.x;
+            tmpt += Matrix4::mulV3(mplt[j4.y], st) * w4.y;
+            tmpt += Matrix4::mulV3(mplt[j4.z], st) * w4.z;
+            tmpt += Matrix4::mulV3(mplt[j4.w], st) * w4.w;
+
+            totalWeights += w4.x + w4.y + w4.z + w4.w;
+        }
+
+        totalWeights = 1.0 / totalWeights;
+        cachedvert[i].vertex = tmpv * totalWeights;
+        cachedvert[i].normal = Vector3::normalized(tmpn * totalWeights);
+        tmpt = Vector3::normalized(tmpt * totalWeights);
+        cachedvert[i].tangent.set(tmpt.x, tmpt.y, tmpt.z, attrs.tangent->w);
+
+        bnd.expand(cachedvert[i].vertex);
+    }
+
+    expandWholeTriangleBounds(sliceid);
+    wholeBounds.expand(bnd);
+}
+
+PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
+    // TODO
+    return -1.0;
 }

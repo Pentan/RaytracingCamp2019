@@ -1,13 +1,8 @@
-//
-//  tracablestructure.hpp
-//  PinkyCore
-//
-//  Created by SatoruNAKAJIMA on 2022/08/14.
-//
-
 #ifndef PINKYPI_TRACABLESTRUCTURE_H
 #define PINKYPI_TRACABLESTRUCTURE_H
 
+#include <memory>
+#include <vector>
 #include "pptypes.h"
 #include "ray.h"
 #include "aabb.h"
@@ -17,29 +12,36 @@ namespace PinkyPi {
     class Mesh;
     class MeshCache;
     class Skin;
+    class Node;
     
     //
     class TracableStructure {
     public:
-        TracableStructure() {}
+        Node* ownerNode;
+        Matrix4 invGlobalMatrix;
+
+        TracableStructure(Node* owner) : ownerNode(owner) {};
         virtual ~TracableStructure() {}
         
-        virtual void initialize() = 0;
-        virtual void update(PPTimeType starttime, PPTimeType endtime) = 0;
-        virtual PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const = 0;
+        virtual void initialize(int maxslice) = 0;
+        virtual void updateSlice(int sliceId) = 0;
+        virtual PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const = 0;
     };
     
     //
     class StaticMeshStructure : public TracableStructure {
     public:
         Mesh* mesh;
+        std::unique_ptr<MeshCache> cache;
+
+        Matrix4 globalMatrix;
         
-        StaticMeshStructure(Mesh* m) : mesh(m) {};
+        StaticMeshStructure(Node* owner, Mesh* m) : TracableStructure(owner), mesh(m) {};
         ~StaticMeshStructure() {};
         
-        void initialize() override;
-        void update(PPTimeType starttime, PPTimeType endtime) override;
-        PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const override;
+        void initialize(int maxslice) override;
+        void updateSlice(int sliceId) override;
+        PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const override;
     };
     
     //
@@ -47,14 +49,15 @@ namespace PinkyPi {
     public:
         Mesh* mesh;
         Skin* skin;
-        MeshCache* cache;
+        std::unique_ptr<MeshCache> cache;
+        std::vector<Matrix4> jointMatrices;
         
-        SkinMeshStructure(Mesh* m, Skin* s) : mesh(m), skin(s) {};
+        SkinMeshStructure(Node* owner, Mesh* m, Skin* s) : TracableStructure(owner), mesh(m), skin(s) {};
         ~SkinMeshStructure() {};
         
-        void initialize() override;
-        void update(PPTimeType starttime, PPTimeType endtime) override;
-        PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const override;
+        void initialize(int maxslice) override;
+        void updateSlice(int sliceId) override;
+        PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const override;
     };
 }
 
