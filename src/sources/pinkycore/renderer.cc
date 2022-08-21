@@ -194,12 +194,15 @@ void Renderer::pathtrace(const Ray& ray, const Scene* scn, Context* cntx, Render
     bool isloop = true;
     while(isloop) {
         SceneIntersection interect;
+        SceneIntersection::Detail detail;
         PPFloat hitt = scene->intersection(ray, kRayOffset, kFarAway, cntx->exposureTimeRate, &interect);
         if(hitt <= 0.0) {
             // TODO background
             radiance.set(0.5, 0.5, 0.5);
             break;
         }
+        
+        scene->computeIntersectionDetail(ray, cntx->exposureTimeRate, interect, &detail);
         
         //+++++
         radiance.set(0.2, 0.2, 1.0);

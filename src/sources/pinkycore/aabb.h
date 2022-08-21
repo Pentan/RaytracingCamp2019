@@ -28,6 +28,8 @@ namespace PinkyPi {
         
         bool isInside(const Vector3 &p) const;
         bool isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const;
+        
+        static AABB transformed(const AABB& a, const Matrix4& m);
     };
 
 }

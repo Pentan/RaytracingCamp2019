@@ -19,11 +19,13 @@ namespace PinkyPi {
     public:
         Node* ownerNode;
         Matrix4 invGlobalMatrix;
+        AABB globalBounds;
 
         TracableStructure(Node* owner) : ownerNode(owner) {};
         virtual ~TracableStructure() {}
         
         virtual void initialize(int maxslice) = 0;
+        virtual void clearSlice() = 0;
         virtual void updateSlice(int sliceId) = 0;
         virtual PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const = 0;
     };
@@ -40,6 +42,7 @@ namespace PinkyPi {
         ~StaticMeshStructure() {};
         
         void initialize(int maxslice) override;
+        void clearSlice() override;
         void updateSlice(int sliceId) override;
         PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const override;
     };
@@ -56,6 +59,7 @@ namespace PinkyPi {
         ~SkinMeshStructure() {};
         
         void initialize(int maxslice) override;
+        void clearSlice() override;
         void updateSlice(int sliceId) override;
         PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const override;
     };

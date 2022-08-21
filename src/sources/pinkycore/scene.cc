@@ -170,6 +170,10 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPT
     return mint;
 }
 
+void Scene::computeIntersectionDetail(const Ray& ray, PPTimeType timerate, const SceneIntersection& isect, SceneIntersection::Detail* odetail) const {
+    // TODO
+}
+
 void Scene::buildAccelerationStructure(int storeId) {
     (void)storeId; // TODO multi buffering
 

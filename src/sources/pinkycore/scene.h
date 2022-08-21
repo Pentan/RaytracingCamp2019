@@ -20,21 +20,6 @@ namespace PinkyPi {
     class Config;
     
     /////
-    struct SceneIntersection {
-        int meshId;
-        MeshIntersection meshIntersect;
-        
-        struct Detail {
-            Vector3 geometryNormal;
-            
-            Vector3 barycentricCoord;
-            Vector3 shadingNormal;
-            Vector4 shadingTangent;
-            Vector3 texcoord0;
-        };
-    };
-    
-    /////
     class Scene {
     public:
         static Scene* buildDefaultScene();
@@ -57,6 +42,7 @@ namespace PinkyPi {
         
         void seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int storeId);
         PPFloat intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPTimeType timerate, SceneIntersection *oisect) const;
+        void computeIntersectionDetail(const Ray& ray, PPTimeType timerate, const SceneIntersection& isect, SceneIntersection::Detail* odetail) const;
         
     private:
         void preprocessTraverse(Node *node, Matrix4 gm, Config* config);

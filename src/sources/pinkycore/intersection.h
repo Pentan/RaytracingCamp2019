@@ -16,5 +16,20 @@ namespace PinkyPi {
         int clusterId;
         int triangleId;
     };
+    
+    /////
+    struct SceneIntersection {
+        int meshId;
+        MeshIntersection meshIntersect;
+        
+        struct Detail {
+            Vector3 geometryNormal;
+            
+            Vector3 barycentricCoord;
+            Vector3 shadingNormal;
+            Vector4 shadingTangent;
+            Vector3 texcoord0;
+        };
+    };
 }
 #endif /* PINKYPI_INTERSECTION_H */

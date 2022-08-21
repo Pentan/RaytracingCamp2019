@@ -94,3 +94,25 @@ bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
 	
 	return true;
 }
+
+AABB AABB::transformed(const AABB& a, const Matrix4& m) {
+    AABB ret;
+    Vector3 tmpv;
+    tmpv.set(a.min.x, a.min.y, a.min.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.max.x, a.min.y, a.min.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.min.x, a.max.y, a.min.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.max.x, a.max.y, a.min.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.min.x, a.min.y, a.max.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.max.x, a.min.y, a.max.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.min.x, a.max.y, a.max.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    tmpv.set(a.max.x, a.max.y, a.max.z);
+    ret.expand(Matrix4::transformV3(m, tmpv));
+    return ret;
+}
