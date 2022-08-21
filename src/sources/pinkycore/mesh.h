@@ -137,8 +137,9 @@ namespace PinkyPi {
 
         Mesh* mesh;
         std::vector<std::unique_ptr<ClusterCache> > clusterCaches;
+        int sliceCount;
 
-        MeshCache(Mesh* m) : mesh(m) {}
+        MeshCache(Mesh* m, int numslice);
         ~MeshCache() {}
 
         void createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt) {

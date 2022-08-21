@@ -83,8 +83,9 @@ void Scene::preprocessTraverse(Node *node, Matrix4 gm, Config* config) {
 }
 
 void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int storeId) {
+    PPTimeType tdiv = static_cast<PPTimeType>(std::max(1, slice - 1)); // [0,1]
     for(int islc = 0; islc < slice; islc++) {
-        PPTimeType t = static_cast<PPTimeType>(islc) / static_cast<PPTimeType>(slice);
+        PPTimeType t = static_cast<PPTimeType>(islc) / tdiv;
         PPTimeType curtime = opentime * (1.0 - t) + closetime * t;
         
         // update node transform

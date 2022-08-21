@@ -317,7 +317,56 @@ void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<
     wholeBounds.expand(bnd);
 }
 
+MeshCache::MeshCache(Mesh* m, int numslice) : mesh(m), sliceCount(numslice) {
+    size_t numclstr = mesh->clusters.size();
+    clusterCaches.resize(numclstr);
+    for(size_t i = 0; i < numclstr; i++) {
+        auto* cc = new ClusterCache(mesh->clusters[i].get(), sliceCount);
+        clusterCaches[i] = std::unique_ptr<ClusterCache>(cc);
+    }
+}
+
 PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
-    // TODO
-    return -1.0;
+    // blute force -----
+    int numCls = static_cast<int>(clusterCaches.size());
+    PPFloat mint = -1.0;
+    int triId = -1;
+    int clusterId = -1;
+    
+    Mesh::Triangle tmptri;
+    PPTimeType slicerate = timerate * sliceCount;
+    int sliceId = static_cast<int>(slicerate);
+    int sliceT = slicerate - std::floor(slicerate);
+    for(int icls = 0; icls < numCls; icls++) {
+        const auto *cls = mesh->clusters[icls].get();
+        const auto *ccache = clusterCaches[icls].get();
+        if(!ccache->wholeBounds.isIntersect(ray, nearhit, farhit)) {
+            continue;
+        }
+        
+        int numTris = static_cast<int>(cls->triangles.size());
+        for(int itri = 0; itri < numTris; itri++) {
+            const auto& tri = cls->triangles[itri];
+            
+            
+            
+            tmptri.initialize(<#const Vector3 &va#>, <#const Vector3 &vb#>, <#const Vector3 &vc#>);
+            PPFloat thit = tri.intersection(ray, nearhit, farhit, nullptr, nullptr);
+            if(thit > 0.0) {
+                if(mint > thit || mint < 0.0) {
+                    mint = thit;
+                    triId = itri;
+                    clusterId = icls;
+                }
+            }
+        }
+    }
+    //-----
+    
+    if(oisect != nullptr) {
+        oisect->clusterId = clusterId;
+        oisect->triangleId = triId;
+    }
+    
+    return mint;
 }

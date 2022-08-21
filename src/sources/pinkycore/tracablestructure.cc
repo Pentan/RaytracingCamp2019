@@ -68,9 +68,13 @@ void SkinMeshStructure::initialize(int maxslice) {
         invGlobalMatrix = Matrix4::inverted(ownerNode->initialTransform.globalMatrix, nullptr);
     }
     jointMatrices.resize(skin->jointNodes.size());
+    
+    auto* mc = new MeshCache();
+    cache = std::unique_ptr<MeshCache>();
 }
 
 void SkinMeshStructure::clearSlice() {
+    globalBounds.clear();
 }
 
 void SkinMeshStructure::updateSlice(int sliceId) {
@@ -82,19 +86,19 @@ void SkinMeshStructure::updateSlice(int sliceId) {
     }
 
     cache->createSkinDeformed(sliceId, jointMatrices);
+    
+    for(auto ite = cache->clusterCaches.begin(); ite != cache->clusterCaches.end(); ++ite) {
+        auto* clstr = ite->get();
+        globalBounds.expand(clstr->wholeBounds);
+    }
 }
 
 PPFloat SkinMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
-    Matrix4 igm;
-    if (ownerNode->animatedFlag == 0) {
-        igm = invGlobalMatrix;
-    }
-    else {
-        igm = ownerNode->computeGlobalMatrix(timerate);
-        igm.invert();
+    if(!globalBounds.isIntersect(ray, nearhit, farhit)) {
+        return -1.0;
     }
     
+    PPFloat ret = cache->intersection(ray, nearhit, farhit, timerate, oisect);
     
-    
-    return -1.0;
+    return ret;
 }
