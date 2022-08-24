@@ -31,15 +31,6 @@ namespace PinkyPi {
 
             kNumAttrs
         };
-
-        struct Attributes {
-            Vector3* normal;
-            Vector4* tangent;
-            Vector3* uv0;
-            Vector4* color0;
-            IntVec4* joints0;
-            Vector4* weights0;
-        };
         
         struct Triangle {
             int a;
@@ -85,6 +76,7 @@ namespace PinkyPi {
         Mesh();
         ~Mesh();
         
+        int assetId;
         std::string name;
         std::vector<std::shared_ptr<Cluster> > clusters;
         std::vector<std::shared_ptr<Cluster> > emissiveClusters;
@@ -110,19 +102,23 @@ namespace PinkyPi {
     //
     class MeshCache {
     public:
+        
+        struct CachedAttribute {
+            Vector3 vertex;
+            Vector3 normal;
+            Vector4 tangent;
+        };
+
         class ClusterCache {
         public:
-            struct CachedAttribute {
-                Vector3 vertex;
-                Vector3 normal;
-                Vector4 tangent;
-            };
             
             ClusterCache(Mesh::Cluster* src, int numslice);
             void clearWholeSliceData();
             void expandWholeTriangleBounds(int sliceid);
             void createTransformed(int sliceid, const Matrix4& m);
-            void createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt);
+            void createSkinDeformed(int sliceid, const Matrix4& m, const std::vector<Matrix4>& mplt, const std::vector<Matrix4>& itmplt);
+
+            CachedAttribute interpolatedCache(int vid, PPTimeType timerate) const;
             
             Mesh::Cluster* sourceCluster;
             // per slice data
@@ -142,9 +138,9 @@ namespace PinkyPi {
         MeshCache(Mesh* m, int numslice);
         ~MeshCache() {}
 
-        void createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt) {
+        void createSkinDeformed(int sliceid, const Matrix4& m, const std::vector<Matrix4>& mplt, const std::vector<Matrix4>& itmplt) {
             for (auto ite = clusterCaches.begin(); ite != clusterCaches.end(); ++ite) {
-                ite->get()->createSkinDeformed(sliceid, mplt);
+                ite->get()->createSkinDeformed(sliceid, m, mplt, itmplt);
             }
         }
 

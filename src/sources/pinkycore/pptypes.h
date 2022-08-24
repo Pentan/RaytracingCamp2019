@@ -41,6 +41,15 @@ namespace PinkyPi {
     // time
     typedef double PPTimeType;
 
+    // vertex attribute
+    struct Attributes {
+        Vector3* normal;
+        Vector4* tangent;
+        Vector3* uv0;
+        Vector4* color0;
+        IntVec4* joints0;
+        Vector4* weights0;
+    };
 }
 
 #endif

@@ -129,6 +129,7 @@ int ImageTexture::wrapSampleX(int x) const {
         case kRepeat:
         default:
             x = x % width;
+            if(x < 0) x += width;
             break;
     }
     return x;
@@ -143,6 +144,7 @@ int ImageTexture::wrapSampleY(int y) const {
         case kRepeat:
         default:
             y = y % height;
+            if(y < 0) y += height;
             break;
     }
     return y;

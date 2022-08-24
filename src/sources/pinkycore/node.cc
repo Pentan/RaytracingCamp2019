@@ -49,10 +49,13 @@ Matrix4 Node::computeGlobalMatrix(PPTimeType tr) const {
         if((animatedFlag & Node::kAnimatedDirect) == 0) {
             return pgm * initialTransform.matrix;
         } else {
-            PPFloat ti = tr * static_cast<float>(transformCache.size() - 1);
+            int lastindex = static_cast<int>(transformCache.size() - 1);
+            PPFloat ti = tr * static_cast<float>(lastindex);
             PPFloat t = std::floor(ti);
-            int i = static_cast<int>(ti - t);
-            Transform tf = Transform::interpolate(transformCache[i], transformCache[i + 1], t);
+            int i0 = static_cast<int>(ti - t);
+            int i1 = std::min(i0 + 1, lastindex);
+            Transform tf = Transform::interpolate(transformCache[i0], transformCache[i1], t);
+            tf.makeMatrix();
             return pgm * tf.matrix;
         }
     }

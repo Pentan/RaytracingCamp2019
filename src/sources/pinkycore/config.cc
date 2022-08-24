@@ -35,6 +35,7 @@ bool Config::load(const std::string& path) {
     height = GetConfigValue<int>(jsonRoot, "height", height);
     
     frames = GetConfigValue<int>(jsonRoot, "frames", frames);
+    startFrame = GetConfigValue<int>(jsonRoot, "startFrame", startFrame);
     framesPerSecond = GetConfigValue<double>(jsonRoot, "framesPerSecond", framesPerSecond);
     
     exposureSecond = GetConfigValue<double>(jsonRoot, "exposureSecond", exposureSecond);
@@ -94,6 +95,9 @@ void Config::parseOptions(int argc, char* argv[]) {
             i += 1;
         } else if(strcmp(v, "-f") == 0 && hasnext) {
             frames = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-sf") == 0 && hasnext) {
+            startFrame = std::atoi(argv[i + 1]);
             i += 1;
         } else if(strcmp(v, "-fps") == 0 && hasnext) {
             framesPerSecond = std::atof(argv[i + 1]);

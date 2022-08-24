@@ -12,6 +12,9 @@
 #include "ray.h"
 #include "postprocessor.h"
 #include "node.h"
+#include "texture.h"
+#include "material.h"
+#include "assetlibrary.h"
 
 using namespace PinkyPi;
 
@@ -54,6 +57,7 @@ Renderer::Renderer(const Config& config, Scene* scn):
     minRussianRouletteCutOff = config.minRussianRouletteCutOff;
     
     renderFrames = config.frames;
+    startFrame = config.startFrame;
     fps = config.framesPerSecond;
     exposureSec = config.exposureSecond;
     exposureSlice = config.exposureSlice;
@@ -81,10 +85,11 @@ Renderer::~Renderer() {
 
 void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime) {
     // scene setup
+    std::cout << "  scene [" << opentime << "," << closetime << "] setup" << std::endl;
     scene->seekTime(opentime, closetime, exposureSlice, 0);
     
     // init contexts
-    unsigned long seedbase = static_cast<unsigned long>(time(NULL));
+    unsigned long seedbase = static_cast<unsigned long>(time(NULL)); // FIXME
     for(int i = 0; i < numMaxJobs; i++) {
         Context& cntx = renderContexts[i];
         cntx.random.setSeed(seedbase + i * 123456789);
@@ -141,13 +146,14 @@ void Renderer::render() {
     }
     
     for(int i = 0; i < renderFrames; i++) {
-        std::cout << "frame[" << i << "] start" << std::endl;
+        int frameNumber = i + startFrame;
+        std::cout << "<" << i+1 << "/" << renderFrames << "> frame[" << frameNumber <<  "] start" << std::endl;
         
         auto fb = framebuffers[frameBufferIndex].get();
         fb->clear();
         auto pp = postprocessors[frameBufferIndex].get();
         
-        PPTimeType t = i / static_cast<PPTimeType>(fps);
+        PPTimeType t = frameNumber / static_cast<PPTimeType>(fps);
         renderOneFrame(fb, pp, t, t + exposureSec);
         
         // wait
@@ -166,7 +172,7 @@ void Renderer::render() {
         }
         
         // post process and save
-        postProcessAndSave(fb, pp, i);
+        postProcessAndSave(fb, pp, frameNumber);
         if(numMaxJobs <= 1) {
             processAllCommands();
         }
@@ -194,18 +200,32 @@ void Renderer::pathtrace(const Ray& ray, const Scene* scn, Context* cntx, Render
     bool isloop = true;
     while(isloop) {
         SceneIntersection interect;
-        SceneIntersection::Detail detail;
+        IntersectionDetail detail;
         PPFloat hitt = scene->intersection(ray, kRayOffset, kFarAway, cntx->exposureTimeRate, &interect);
         if(hitt <= 0.0) {
             // TODO background
-            radiance.set(0.5, 0.5, 0.5);
+            //radiance.set(0.5, 0.5, 0.5);
+            
+            PPFloat theta = std::acos(ray.direction.y) / kPI;
+            PPFloat phi = std::atan2(ray.direction.z, ray.direction.x) / kPI * 0.5 + 0.5;
+            auto texel = scene->backgroundTexture->sample(phi, theta);
+            radiance.set(texel.rgb.x, texel.rgb.y, texel.rgb.z);
             break;
         }
         
-        scene->computeIntersectionDetail(ray, cntx->exposureTimeRate, interect, &detail);
-        
+        scene->computeIntersectionDetail(ray, hitt, cntx->exposureTimeRate, interect, &detail);
+        auto* material = scene->assetLib->getMaterial(interect.meshId, interect.meshIntersect.clusterId);
+
         //+++++
-        radiance.set(0.2, 0.2, 1.0);
+        //radiance.set(0.2, 0.2, 1.0);
+        //radiance = detail.geometryNormal * 0.5 + 0.5;
+        //radiance = detail.texcoord0;
+
+        //PPFloat dfs = Vector3::dot(detail.geometryNormal, Vector3(0.577, 0.577, 0.577)) * 0.5 + 0.5;
+        //radiance = material->baseColorFactor * dfs;
+
+        radiance = material->baseColorFactor * (hitt - std::floor(hitt));
+
         break;
 
         depth += 1;
@@ -225,6 +245,12 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
     Camera *camera = cameraNode->content.camera;
     
     RenderResult result;
+
+    int numspi = pixelSubSamples * pixelSubSamples;
+    std::vector<int> subPixelIndex(numspi);
+    for (int i = 0; i < numspi; i++) {
+        subPixelIndex[i] = i;
+    }
     
     for(int iy = tile.starty; iy < tile.endy; iy++) {
         for(int ix = tile.startx; ix < tile.endx; ix++) {
@@ -233,29 +259,34 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
             int pixelId = tile.getPixelIndex(ix, iy);
             FrameBuffer::Pixel& pixel = cntx->framebuffer->getPixel(pixelId);
             
-            for(int issy = 0; issy < pixelSubSamples; issy++) {
-                for(int issx = 0; issx < pixelSubSamples; issx++) {
-                    PPFloat ssx = PPFloat(issx) * subPixelSize;
-                    PPFloat ssy = PPFloat(issy) * subPixelSize;
-                    
-                    for(int ips = 0; ips < samplesPerPixel; ips++) {
-                        PPFloat sx = px + ssx + rng.nextDoubleCO() * subPixelSize;
-                        PPFloat sy = py + ssy + rng.nextDoubleCO() * subPixelSize;
-                        
-                        sx = (sx / cntx->framebuffer->getWidth()) * 2.0 - 1.0;
-                        sy = (sy / cntx->framebuffer->getHeight()) * 2.0 - 1.0;
-
-                        Ray ray = camera->getRay(sx, sy, &rng);
-
-                        cntx->exposureTimeRate = rng.nextDoubleCO();
-                        Matrix4 camgm = cameraNode->computeGlobalMatrix(cntx->exposureTimeRate);
-                        
-                        ray = ray.transformed(camgm);
-                        pathtrace(ray, scene, cntx, &result);
-                        
-                        pixel.accumulate(result.radiance);
+            for(int ips = 0; ips < samplesPerPixel; ips++) {
+                int spi = ips % numspi;
+                if (spi == 0) {
+                    for (int ispi = 0; ispi < numspi - 1; ispi++) {
+                        int swapid = ispi + static_cast<int>(rng.nextDoubleCO() * (numspi - ispi));
+                        int tmp = subPixelIndex[ispi];
+                        subPixelIndex[ispi] = subPixelIndex[swapid];
+                        subPixelIndex[swapid] = tmp;
                     }
                 }
+                PPFloat ssx = PPFloat(subPixelIndex[spi] % pixelSubSamples) * subPixelSize;
+                PPFloat ssy = PPFloat(subPixelIndex[spi] / pixelSubSamples) * subPixelSize;
+
+                PPFloat sx = px + ssx + rng.nextDoubleCO() * subPixelSize;
+                PPFloat sy = py + ssy + rng.nextDoubleCO() * subPixelSize;
+
+                sx = (sx / cntx->framebuffer->getWidth()) * 2.0 - 1.0;
+                sy = (sy / cntx->framebuffer->getHeight()) * 2.0 - 1.0;
+
+                Ray ray = camera->getRay(sx, sy, &rng);
+
+                cntx->exposureTimeRate = rng.nextDoubleCO();
+                Matrix4 camgm = cameraNode->computeGlobalMatrix(cntx->exposureTimeRate);
+
+                ray = ray.transformed(camgm);
+                pathtrace(ray, scene, cntx, &result);
+
+                pixel.accumulate(result.radiance);
             }
         }
     }

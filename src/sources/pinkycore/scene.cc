@@ -34,6 +34,8 @@ bool Scene::preprocess(Config* config) {
         preprocessTraverse(node, m, config);
     }
     
+    backgroundTexture = assetLib->backgroundTex.get();
+    
     return true;
 }
 
@@ -119,10 +121,12 @@ void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int s
 
             if(node->isTransformDirty) {
                 node->currentTransform.makeMatrix();
-                if(node->parent != nullptr) {
-                    node->currentTransform.globalMatrix = node->parent->currentTransform.globalMatrix * node->currentTransform.matrix;
-                }
                 node->isTransformDirty = false;
+            }
+            if(node->parent != nullptr) {
+                node->currentTransform.globalMatrix = node->parent->currentTransform.globalMatrix * node->currentTransform.matrix;
+            } else {
+                node->currentTransform.globalMatrix = node->currentTransform.matrix;
             }
             node->currentInverseGlobal = Matrix4::inverted(node->currentTransform.globalMatrix, nullptr);
             node->transformCache[islc] = node->currentTransform;
@@ -134,9 +138,8 @@ void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int s
             auto* trc = nd->tracable.get();
             trc->updateSlice(islc);
         }
-
     }
-
+    
     // build AS
     buildAccelerationStructure(storeId);
 }
@@ -152,12 +155,13 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPT
     int numMeshes = static_cast<int>(tracables.size());
     for(int i = 0; i < numMeshes; i++) {
         MeshIntersection isect;
-        PPFloat t = tracables[i]->tracable->intersection(ray, hitnear, hitfar, timerate, &isect);
+        auto* trc = tracables[i]->tracable.get();
+        PPFloat t = trc->intersection(ray, hitnear, hitfar, timerate, &isect);
         if(t > 0.0) {
             if(mint > t || mint < 0.0) {
                 mint = t;
                 meshisect = isect;
-                meshid = i;
+                meshid = trc->mesh->assetId;
             }
         }
     }
@@ -171,13 +175,18 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPT
     return mint;
 }
 
-void Scene::computeIntersectionDetail(const Ray& ray, PPTimeType timerate, const SceneIntersection& isect, SceneIntersection::Detail* odetail) const {
-    // TODO
+void Scene::computeIntersectionDetail(const Ray& ray, PPFloat hitt, PPTimeType timerate, const SceneIntersection& isect, IntersectionDetail* odetail) const {
+    auto* trc = tracables[isect.meshId]->tracable.get();
+    trc->intersectionDetail(ray, hitt, timerate, isect.meshIntersect, odetail);
 }
 
 void Scene::buildAccelerationStructure(int storeId) {
-    (void)storeId; // TODO multi buffering
+    (void)storeId; // TODO? multi buffering
+    
+    // build local AS
+    for (auto ite = tracables.begin(); ite != tracables.end(); ++ite) {
+        (*ite)->tracable->updateFinished();
+    }
 
-
-    // build BVH
+    // build AS
 }

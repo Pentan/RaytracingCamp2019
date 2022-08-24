@@ -28,6 +28,7 @@ namespace PinkyPi {
         float minRussianRouletteCutOff;
         
         int renderFrames;
+        int startFrame;
         double fps;
         double exposureSec;
         int exposureSlice;

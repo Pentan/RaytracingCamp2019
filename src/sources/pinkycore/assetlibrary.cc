@@ -18,3 +18,7 @@ AssetLibrary::AssetLibrary():
 AssetLibrary::~AssetLibrary() {
     
 }
+
+Material* AssetLibrary::getMaterial(int meshId, int clusterId) const {
+    return meshes[meshId]->clusters[clusterId]->material;
+}

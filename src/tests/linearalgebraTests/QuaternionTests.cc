@@ -131,6 +131,85 @@ TEST_CASE("Quaternion rotation test [quaternion]") {
     }
 }
 
+TEST_CASE("Quaternion matrix test [quaternion]") {
+    SUBCASE("y 0 radian") {
+        Quaternion q = Quaternion::makeRotation(0.0, 0.0, 1.0, 0.0);
+        Vector3 p(2.0, 0.0, 0.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("y 45 radian") {
+        Quaternion q = Quaternion::makeRotation(M_PI * 0.25, 0.0, 1.0, 0.0);
+        Vector3 p(2.0, 0.0, 0.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("y 90 radian") {
+        Quaternion q = Quaternion::makeRotation(M_PI * 0.5, 0.0, 1.0, 0.0);
+        Vector3 p(2.0, 0.0, 0.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("x 0 radian") {
+        Quaternion q = Quaternion::makeRotation(0.0, 1.0, 0.0, 0.0);
+        Vector3 p(0.0, 0.0, 2.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("x 45 radian") {
+        Quaternion q = Quaternion::makeRotation(M_PI * 0.25, 1.0, 0.0, 0.0);
+        Vector3 p(0.0, 0.0, 2.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("x 90 radian") {
+        Quaternion q = Quaternion::makeRotation(M_PI * 0.5, 1.0, 0.0, 0.0);
+        Vector3 p(0.0, 0.0, 2.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+
+    SUBCASE("free rotation") {
+        Quaternion q = Quaternion::makeRotation(M_PI * 0.5, 0.577, 0.577, 0.577);
+        Vector3 p(0.0, 0.0, 2.0);
+        Vector3 rq = q.rotate(p);
+        Matrix4 m = q.getMatrix();
+        Vector3 rm = Matrix4::transformV3(m, p);
+        REQUIRE(rq.x == doctest::Approx(rm.x).epsilon(kTestEPS));
+        REQUIRE(rq.y == doctest::Approx(rm.y).epsilon(kTestEPS));
+        REQUIRE(rq.z == doctest::Approx(rm.z).epsilon(kTestEPS));
+    }
+}
+
 TEST_CASE("Quaternion lerp test [quaternion]") {
     Quaternion q0(1.0, 2.0, 3.0, 4.0);
     Quaternion q1(5.0, 6.0, 7.0, 8.0);

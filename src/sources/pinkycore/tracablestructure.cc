@@ -45,7 +45,12 @@ void StaticMeshStructure::updateSlice(int sliceId) {
     }
 }
 
+void StaticMeshStructure::updateFinished() {
+    // TODO
+}
+
 PPFloat StaticMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
+    Matrix4 gm;
     Matrix4 igm;
     
     if(!globalBounds.isIntersect(ray, nearhit, farhit)) {
@@ -54,12 +59,80 @@ PPFloat StaticMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFlo
 
     if (ownerNode->animatedFlag == 0) {
         igm = invGlobalMatrix;
+        gm = ownerNode->initialTransform.globalMatrix;
     } else {
-        igm = ownerNode->computeGlobalMatrix(timerate);
-        igm.invert();
+        gm = ownerNode->computeGlobalMatrix(timerate);
+        igm = Matrix4::inverted(gm, nullptr);
+    }
+    
+    Ray lray = ray.transformed(igm);
+    Vector3 lnearp = Matrix4::transformV3(igm, ray.pointAt(nearhit));
+    PPFloat lnearhit = (lnearp - lray.origin).length();
+    Vector3 lfarp = Matrix4::transformV3(igm, ray.pointAt(farhit));
+    PPFloat lfarhit = (lfarp - lray.origin).length();
+    
+    PPFloat lt = mesh->intersection(lray, lnearhit, lfarhit, oisect);
+    if(lt < lnearhit) {
+        return -1.0;
+    }
+    
+    Vector3 lhp = lray.pointAt(lt);
+    Vector3 ghp = Matrix4::transformV3(gm, lhp);
+
+    return (ray.origin - ghp).length();
+}
+
+void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTimeType timerate, const MeshIntersection& isect, IntersectionDetail* odetail) const {
+    Matrix4 gm;
+    Matrix4 igm;
+    Matrix4 itgm;
+
+    if (ownerNode->animatedFlag == 0) {
+        gm = ownerNode->initialTransform.globalMatrix;
+        igm = invGlobalMatrix;
+    } else {
+        gm = ownerNode->computeGlobalMatrix(timerate);
+        igm = Matrix4::inverted(gm, nullptr);
     }
 
-    return mesh->intersection(ray.transformed(igm), nearhit, farhit, oisect);
+    itgm = Matrix4::transposed(igm);
+    
+    auto* cls = mesh->clusters[isect.clusterId].get();
+    const auto& tri = cls->triangles[isect.triangleId];
+
+    auto attrA = cls->attributesAt(tri.a);
+    auto attrB = cls->attributesAt(tri.b);
+    auto attrC = cls->attributesAt(tri.c);
+
+    PPFloat wa = 1.0 - isect.vcb - isect.vcc;
+    PPFloat wb = isect.vcb;
+    PPFloat wc = isect.vcb;
+
+    odetail->barycentricCoord.set(wa, wb, wc);
+    odetail->vertexAttributes[0] = attrA;
+    odetail->vertexAttributes[1] = attrB;
+    odetail->vertexAttributes[2] = attrC;
+    
+    odetail->geometryNormal = Matrix4::transformV3(itgm, tri.normal);
+    odetail->geometryNormal.normalize();
+    
+    odetail->shadingNormal = *attrA.normal * wa + *attrB.normal * wb + *attrC.normal * wc;
+    odetail->shadingNormal = Matrix4::transformV3(itgm, odetail->shadingNormal);
+    odetail->shadingNormal.normalize();
+
+    odetail->shadingTangent = *attrA.tangent * wa + *attrB.tangent * wb + *attrC.tangent * wc;
+    Vector3 tmptan = Matrix4::transformV3(gm, odetail->shadingTangent.getXYZ());
+    tmptan.normalize();
+    odetail->shadingTangent.x = tmptan.x;
+    odetail->shadingTangent.y = tmptan.y;
+    odetail->shadingTangent.z = tmptan.z;
+
+    odetail->uvCount = cls->attributeCount(Mesh::kUv);
+    odetail->colorCount = cls->attributeCount(Mesh::kColor);
+
+    if (odetail->uvCount > 0) {
+        odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;
+    }
 }
 
 // SkinMeshStructure
@@ -68,9 +141,10 @@ void SkinMeshStructure::initialize(int maxslice) {
         invGlobalMatrix = Matrix4::inverted(ownerNode->initialTransform.globalMatrix, nullptr);
     }
     jointMatrices.resize(skin->jointNodes.size());
+    jointInvTransMatrices.resize(skin->jointNodes.size());
     
-    auto* mc = new MeshCache();
-    cache = std::unique_ptr<MeshCache>();
+    auto* mc = new MeshCache(mesh, maxslice);
+    cache = std::unique_ptr<MeshCache>(mc);
 }
 
 void SkinMeshStructure::clearSlice() {
@@ -83,9 +157,10 @@ void SkinMeshStructure::updateSlice(int sliceId) {
         auto* jnode = skin->jointNodes[ijoint];
         auto& ibm = skin->inverseBindMatrices[ijoint];
         jointMatrices[ijoint] = ownerNode->currentInverseGlobal * jnode->currentTransform.globalMatrix * ibm;
+        jointInvTransMatrices[ijoint] = Matrix4::transposed(Matrix4::inverted(jointMatrices[ijoint], nullptr));
     }
 
-    cache->createSkinDeformed(sliceId, jointMatrices);
+    cache->createSkinDeformed(sliceId, ownerNode->currentTransform.globalMatrix, jointMatrices, jointInvTransMatrices);
     
     for(auto ite = cache->clusterCaches.begin(); ite != cache->clusterCaches.end(); ++ite) {
         auto* clstr = ite->get();
@@ -93,12 +168,64 @@ void SkinMeshStructure::updateSlice(int sliceId) {
     }
 }
 
+void SkinMeshStructure::updateFinished() {
+    // TODO
+}
+
 PPFloat SkinMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
     if(!globalBounds.isIntersect(ray, nearhit, farhit)) {
         return -1.0;
     }
     
+    // TODO
     PPFloat ret = cache->intersection(ray, nearhit, farhit, timerate, oisect);
     
     return ret;
+}
+
+void SkinMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTimeType timerate, const MeshIntersection& isect, IntersectionDetail* odetail) const {
+    auto* cls = mesh->clusters[isect.clusterId].get();
+    auto* ccache = cache->clusterCaches[isect.clusterId].get();
+
+    const auto& otri = cls->triangles[isect.triangleId];
+
+    auto attrA = cls->attributesAt(otri.a);
+    auto attrB = cls->attributesAt(otri.b);
+    auto attrC = cls->attributesAt(otri.c);
+
+    auto cacheA = ccache->interpolatedCache(otri.a, timerate);
+    auto cacheB = ccache->interpolatedCache(otri.b, timerate);
+    auto cacheC = ccache->interpolatedCache(otri.c, timerate);
+
+    Mesh::Triangle ctri;
+
+    ctri.initialize(cacheA.vertex, cacheB.vertex, cacheC.vertex);
+
+    PPFloat wa = 1.0 - isect.vcb - isect.vcc;
+    PPFloat wb = isect.vcb;
+    PPFloat wc = isect.vcb;
+
+    odetail->barycentricCoord.set(wa, wb, wc);
+    odetail->vertexAttributes[0] = attrA;
+    odetail->vertexAttributes[1] = attrB;
+    odetail->vertexAttributes[2] = attrC;
+
+    odetail->geometryNormal = ctri.normal;
+
+    odetail->shadingNormal = cacheA.normal * wa + cacheA.normal * wb + cacheA.normal * wc;
+    odetail->shadingNormal.normalize();
+
+    odetail->shadingTangent = cacheA.tangent * wa + cacheA.tangent * wb + cacheA.tangent * wc;
+    Vector3 tmptan = odetail->shadingTangent.getXYZ();
+    tmptan.normalize();
+    odetail->shadingTangent.x = tmptan.x;
+    odetail->shadingTangent.y = tmptan.y;
+    odetail->shadingTangent.z = tmptan.z;
+
+    odetail->uvCount = cls->attributeCount(Mesh::kUv);
+    odetail->colorCount = cls->attributeCount(Mesh::kColor);
+
+    if (odetail->uvCount > 0) {
+        odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;
+    }
 }

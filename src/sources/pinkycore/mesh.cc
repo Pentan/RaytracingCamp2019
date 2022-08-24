@@ -47,7 +47,7 @@ Mesh::Cluster::Cluster(int numverts, int numtris, const std::map<AttributeId, in
 Mesh::Cluster::~Cluster() {
 }
 
-Mesh::Attributes Mesh::Cluster::attributesAt(int i) {
+Attributes Mesh::Cluster::attributesAt(int i) {
     Attributes attrs;
     unsigned char* data = attributeBuffer.data() + attributeDataSize * i;
 
@@ -162,6 +162,8 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
     PPFloat mint = -1.0;
     int triId = -1;
     int clusterId = -1;
+    PPFloat vcb = 0.0;
+    PPFloat vcc = 0.0;
     for(int icls = 0; icls < numCls; icls++) {
         const Cluster *cls = clusters[icls].get();
         if(!cls->bounds.isIntersect(ray, nearhit, farhit)) {
@@ -171,7 +173,7 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
         int numTris = static_cast<int>(cls->triangles.size());
         for(int itri = 0; itri < numTris; itri++) {
             const Triangle& tri = cls->triangles[itri];
-            PPFloat thit = tri.intersection(ray, nearhit, farhit, nullptr, nullptr);
+            PPFloat thit = tri.intersection(ray, nearhit, farhit, &vcb, &vcc);
             if(thit > 0.0) {
                 if(mint > thit || mint < 0.0) {
                     mint = thit;
@@ -186,6 +188,8 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
     if(oisect != nullptr) {
         oisect->clusterId = clusterId;
         oisect->triangleId = triId;
+        oisect->vcb = vcb;
+        oisect->vcc = vcc;
     }
     
     return mint;
@@ -214,7 +218,7 @@ sourceCluster(src)
 
         // initial values
         for (size_t i = 0; i < sourceCluster->vertices.size(); i++) {
-            Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+            Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
             cachevert[i].vertex = sourceCluster->vertices[i];
             cachevert[i].normal = *attrs.normal;
             cachevert[i].tangent = *attrs.tangent;
@@ -250,11 +254,12 @@ void MeshCache::ClusterCache::expandWholeTriangleBounds(int sliceid) {
 void MeshCache::ClusterCache::createTransformed(int sliceid, const Matrix4& m) {
     auto& cachedvert = cachedVertices[sliceid];
     auto& bnd = sliceBounds[sliceid];
+    Matrix4 itm = Matrix4::transposed(Matrix4::inverted(m, nullptr));
     bnd.clear();
     for(size_t i = 0; i < sourceCluster->vertices.size(); i++) {
-        Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+        Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
         cachedvert[i].vertex = Matrix4::transformV3(m, sourceCluster->vertices[i]);
-        cachedvert[i].normal = Matrix4::mulV3(m, *attrs.normal);
+        cachedvert[i].normal = Matrix4::mulV3(itm, *attrs.normal);
         Vector3 tmpv3(attrs.tangent->x, attrs.tangent->y, attrs.tangent->z);
         tmpv3 = Matrix4::mulV3(m, tmpv3);
         cachedvert[i].tangent.set(tmpv3.x, tmpv3.y, tmpv3.z, attrs.tangent->w);
@@ -265,13 +270,14 @@ void MeshCache::ClusterCache::createTransformed(int sliceid, const Matrix4& m) {
     wholeBounds.expand(bnd);
 }
 
-void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<Matrix4>& mplt) {
+void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const Matrix4& m, const std::vector<Matrix4>& mplt, const std::vector<Matrix4>& itmplt) {
+    Matrix4 itm = Matrix4::transposed(Matrix4::inverted(m, nullptr));
     auto& cachedvert = cachedVertices[sliceid];
     auto& bnd = sliceBounds[sliceid];
     bnd.clear();
     const int numinfl = sourceCluster->attributeCount(Mesh::AttributeId::kWeights);
     for (size_t i = 0; i < sourceCluster->vertices.size(); i++) {
-        Mesh::Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
+        Attributes attrs = sourceCluster->attributesAt(static_cast<int>(i));
         PPFloat totalWeights = 0.0;
 
         const auto& sv = sourceCluster->vertices[i];
@@ -291,10 +297,10 @@ void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<
             tmpv += Matrix4::transformV3(mplt[j4.z], sv) * w4.z;
             tmpv += Matrix4::transformV3(mplt[j4.w], sv) * w4.w;
 
-            tmpn += Matrix4::mulV3(mplt[j4.x], sn) * w4.x;
-            tmpn += Matrix4::mulV3(mplt[j4.y], sn) * w4.y;
-            tmpn += Matrix4::mulV3(mplt[j4.z], sn) * w4.z;
-            tmpn += Matrix4::mulV3(mplt[j4.w], sn) * w4.w;
+            tmpn += Matrix4::mulV3(itmplt[j4.x], sn) * w4.x;
+            tmpn += Matrix4::mulV3(itmplt[j4.y], sn) * w4.y;
+            tmpn += Matrix4::mulV3(itmplt[j4.z], sn) * w4.z;
+            tmpn += Matrix4::mulV3(itmplt[j4.w], sn) * w4.w;
 
             tmpt += Matrix4::mulV3(mplt[j4.x], st) * w4.x;
             tmpt += Matrix4::mulV3(mplt[j4.y], st) * w4.y;
@@ -305,9 +311,9 @@ void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<
         }
 
         totalWeights = 1.0 / totalWeights;
-        cachedvert[i].vertex = tmpv * totalWeights;
-        cachedvert[i].normal = Vector3::normalized(tmpn * totalWeights);
-        tmpt = Vector3::normalized(tmpt * totalWeights);
+        cachedvert[i].vertex = Matrix4::transformV3(m, tmpv * totalWeights);
+        cachedvert[i].normal = Vector3::normalized(Matrix4::mulV3(itm, tmpn * totalWeights));
+        tmpt = Vector3::normalized(Matrix4::mulV3(m, tmpt * totalWeights));
         cachedvert[i].tangent.set(tmpt.x, tmpt.y, tmpt.z, attrs.tangent->w);
 
         bnd.expand(cachedvert[i].vertex);
@@ -315,6 +321,26 @@ void MeshCache::ClusterCache::createSkinDeformed(int sliceid, const std::vector<
 
     expandWholeTriangleBounds(sliceid);
     wholeBounds.expand(bnd);
+}
+
+MeshCache::CachedAttribute MeshCache::ClusterCache::interpolatedCache(int vid, PPTimeType timerate) const {
+    int slicelast = static_cast<int>(cachedVertices.size() - 1);
+    PPTimeType slicerate = timerate * slicelast;
+    PPTimeType t = slicerate - std::floor(slicerate);
+    int i0 = static_cast<int>(std::floor(slicerate));
+    int i1 = std::min(i0 + 1, slicelast);
+
+    CachedAttribute ret;
+    const auto& sv0 = cachedVertices[i0][vid];
+    const auto& sv1 = cachedVertices[i1][vid];
+
+    ret.vertex = Vector3::lerp(sv0.vertex, sv1.vertex, t);
+    ret.normal = Vector3::normalized(Vector3::lerp(sv0.normal, sv1.normal, t));
+    ret.tangent = Vector4::lerp(sv0.tangent, sv1.tangent, t);
+    auto tmptan = Vector3::normalized(ret.tangent.getXYZ());
+    ret.tangent.set(tmptan, ret.tangent.w);
+
+    return ret;
 }
 
 MeshCache::MeshCache(Mesh* m, int numslice) : mesh(m), sliceCount(numslice) {
@@ -332,26 +358,30 @@ PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit,
     PPFloat mint = -1.0;
     int triId = -1;
     int clusterId = -1;
+    PPFloat vcb = 0.0;
+    PPFloat vcc = 0.0;
     
     Mesh::Triangle tmptri;
     PPTimeType slicerate = timerate * sliceCount;
     int sliceId = static_cast<int>(slicerate);
-    int sliceT = slicerate - std::floor(slicerate);
+    PPTimeType sliceT = slicerate - std::floor(slicerate);
     for(int icls = 0; icls < numCls; icls++) {
-        const auto *cls = mesh->clusters[icls].get();
         const auto *ccache = clusterCaches[icls].get();
         if(!ccache->wholeBounds.isIntersect(ray, nearhit, farhit)) {
             continue;
         }
         
+        const auto *cls = mesh->clusters[icls].get();
         int numTris = static_cast<int>(cls->triangles.size());
         for(int itri = 0; itri < numTris; itri++) {
             const auto& tri = cls->triangles[itri];
             
+            auto cva = ccache->interpolatedCache(tri.a, timerate);
+            auto cvb = ccache->interpolatedCache(tri.b, timerate);
+            auto cvc = ccache->interpolatedCache(tri.c, timerate);
             
-            
-            tmptri.initialize(<#const Vector3 &va#>, <#const Vector3 &vb#>, <#const Vector3 &vc#>);
-            PPFloat thit = tri.intersection(ray, nearhit, farhit, nullptr, nullptr);
+            tmptri.initialize(cva.vertex, cvb.vertex, cvc.vertex);
+            PPFloat thit = tmptri.intersection(ray, nearhit, farhit, &vcb, &vcc);
             if(thit > 0.0) {
                 if(mint > thit || mint < 0.0) {
                     mint = thit;
@@ -366,6 +396,8 @@ PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit,
     if(oisect != nullptr) {
         oisect->clusterId = clusterId;
         oisect->triangleId = triId;
+        oisect->vcb = vcb;
+        oisect->vcc = vcc;
     }
     
     return mint;

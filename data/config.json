@@ -1,6 +1,9 @@
 {
     "width":320,
     "height":180,
+
+    "samplesPerPixel": 1,
+    "pixelSubSamples": 1,
     
     "inputFile": "data/input.gltf",
     "outputDir": "output",

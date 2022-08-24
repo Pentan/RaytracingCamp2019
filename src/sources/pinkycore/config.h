@@ -11,6 +11,7 @@ namespace PinkyPi {
         int height;
         
         int frames;
+        int startFrame;
         double framesPerSecond;
         
         double exposureSecond;
@@ -44,6 +45,7 @@ namespace PinkyPi {
             width(320),
             height(270),
             frames(1),
+            startFrame(0),
             framesPerSecond(30.0),
             exposureSecond(0.0),
             exposureSlice(1),

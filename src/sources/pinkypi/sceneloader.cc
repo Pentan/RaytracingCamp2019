@@ -648,7 +648,7 @@ namespace {
                     v.y = posba.readFloat();
                     v.z = posba.readFloat();
                     
-                    Mesh::Attributes attrs = cluster->attributesAt(iv);
+                    Attributes attrs = cluster->attributesAt(iv);
                     attrs.normal->x = nrmba.readFloat();
                     attrs.normal->y = nrmba.readFloat();
                     attrs.normal->z = nrmba.readFloat();
@@ -656,6 +656,7 @@ namespace {
                     attrs.tangent->x = tanba.readFloat();
                     attrs.tangent->y = tanba.readFloat();
                     attrs.tangent->z = tanba.readFloat();
+                    attrs.tangent->w = tanba.readFloat();
                     
                     for (int j = 0; j < numUvs; j++) {
                         Vector3* uvn = attrs.uv0 + j;
@@ -728,6 +729,7 @@ namespace {
             mesh->totalTriangles = totalTris;
             
             // Add
+            mesh->assetId = count;
             assetlib->meshes.push_back(std::shared_ptr<Mesh>(mesh));
             count += 1;
         }
@@ -1169,6 +1171,63 @@ namespace {
         }
         return count;
     }
+    
+    void LoadBackgroundTexture(const std::string path, AssetLibrary *assetlib) {
+        if(path.length() > 0) {
+            // load from file
+        } else {
+            std::vector<unsigned char> buf(8 * 4 * 4);
+            unsigned char* data = buf.data();
+            for(int iy = 0; iy < 4; iy++) {
+                unsigned char c = iy * 64 + 15;
+                data[0] = 0xff;
+                data[1] = c;
+                data[2] = c;
+                data[3] = 0xff;
+                
+                data[4] = c;
+                data[5] = 0xff;
+                data[6] = c;
+                data[7] = 0xff;
+                
+                data[8]  = c;
+                data[9]  = 0x80;
+                data[10] = c;
+                data[11] = 0xff;
+                
+                data[12] = c;
+                data[13] = c;
+                data[14] = 0xff;
+                data[15] = 0xff;
+                
+                data[16] = c;
+                data[17] = c;
+                data[18] = 0x80;
+                data[19] = 0xff;
+                
+                data[20] = c;
+                data[21] = 0xff;
+                data[22] = 0xff;
+                data[23] = 0xff;
+                
+                data[24] = c;
+                data[25] = 0x80;
+                data[25] = 0x80;
+                data[27] = 0xff;
+                
+                data[28] = 0x80;
+                data[29] = c;
+                data[30] = c;
+                data[31] = 0xff;
+                
+                data += 32;
+            }
+            auto* tex = new ImageTexture(8, 4);
+            tex->initWith8BPPImage(buf.data(), 4, 2.2);
+            tex->sampleType = ImageTexture::kNearest;
+            assetlib->backgroundTex = std::shared_ptr<Texture>(tex);
+        }
+    }
 }
 
 AssetLibrary* SceneLoader::load(std::string filepath) {
@@ -1198,6 +1257,8 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     ParseSkins(model, assetLib);
     ParseAnimations(model, assetLib);
     ParseScenes(model, assetLib);
+    
+    LoadBackgroundTexture(std::string(), assetLib);
     
     assetLib->defaultSceneId = model.defaultScene;
     
