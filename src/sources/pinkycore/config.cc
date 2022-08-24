@@ -112,4 +112,18 @@ void Config::parseOptions(int argc, char* argv[]) {
     }
 }
 
+void Config::print() const {
+    std::cout << "--- config dump ---" << "\n";
+    std::cout << "frames:" << frames << ", start:" << startFrame << ", fps:" << framesPerSecond << "\n";
+    std::cout << "maxThreads:" << maxThreads << "\n";
+    std::cout << "spp:" << samplesPerPixel << ", sub:" << pixelSubSamples << "\n";
+    std::cout << "size:(" << width << "," << height << "), tileSize:" << tileSize << "\n";
+    std::cout << "exposureSec:" << exposureSecond << ", slice:" << exposureSlice << "\n";
+    std::cout << "depth min:" << minDepth << ", max:" << maxDepth << ", cutoff:" << minRussianRouletteCutOff << "\n";
+    std::cout << "input:" << inputFile << "\n";
+    std::cout << "outputDir:" << outputDir << "\n";
+    std::cout << "outputName" << outputName << "*." << outputExt << "\n";
+    std::cout << "--- config end ---" << std::endl;
+}
+
 

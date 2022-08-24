@@ -73,8 +73,13 @@ bool AABB::isInside(const Vector3 &p) const {
 }
 
 bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
-	PPFloat largest_min = tnear;
-    PPFloat smallest_max = tfar;
+    PPFloat t = intersectDistance(ray);
+    return (tnear < t) && (t < tfar);
+}
+
+PPFloat AABB::intersectDistance(const Ray &ray) const {
+	PPFloat largest_min = -std::numeric_limits<PPFloat>::max();
+    PPFloat smallest_max = std::numeric_limits<PPFloat>::max();
 	
 	for(int i = 0; i < 3; i++) {
 		PPFloat vdiv = 1.0 / ray.direction.v[i];
@@ -88,11 +93,11 @@ bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
         smallest_max = std::min(smallest_max, tmpmax);
         
 		if(smallest_max < largest_min) {
-			return false;
+            return -std::numeric_limits<PPFloat>::max();
 		}
 	}
 	
-	return true;
+	return (largest_min > 0.0) ? largest_min : smallest_max;
 }
 
 AABB AABB::transformed(const AABB& a, const Matrix4& m) {

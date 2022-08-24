@@ -47,6 +47,34 @@ namespace {
         }
         return t;
     }
+    
+    PPFloat genHitRay(AABB aabb, PPFloat t, int pn, Vector3 ro, Vector3* rd) {
+        Vector3 op = Vector3::lerp(aabb.min, aabb.max, t);
+        switch (pn) {
+            case 0:
+                op.x = aabb.min.x; // 0:-x
+                break;
+            case 1:
+                op.y = aabb.min.y; // 1:-y
+                break;
+            case 2:
+                op.z = aabb.min.z; // 2:-z
+                break;
+            case 3:
+                op.x = aabb.max.x; // 3:+x
+                break;
+            case 4:
+                op.y = aabb.max.y; // 4:+y
+                break;
+            case 5:
+                op.z = aabb.max.z; // 5:+z
+                break;
+        }
+        *rd = op - ro;
+        PPFloat d = rd->length();
+        *rd = *rd / d;
+        return d;
+    };
 }
 
 TEST_CASE("AABB basic test [AABB]") {
@@ -125,35 +153,6 @@ TEST_CASE("AABB exact test [AABB]") {
     REQUIRE(hitRayAndAABBExact(aabb, Vector3( 2.0, -1.01, -1.0), Vector3(-1.0, 0.0, 0.0)) < 0.0);
     REQUIRE(hitRayAndAABBExact(aabb, Vector3(-2.0,  1.01,  1.0), Vector3( 1.0, 0.0, 0.0)) < 0.0);
     
-    
-    auto genHitRay = [&](AABB aabb, PPFloat t, int pn, Vector3 ro, Vector3* rd) {
-        Vector3 op = Vector3::lerp(aabb.min, aabb.max, t);
-        switch (pn) {
-            case 0:
-                op.x = aabb.min.x; // 0:-x
-                break;
-            case 1:
-                op.y = aabb.min.y; // 1:-y
-                break;
-            case 2:
-                op.z = aabb.min.z; // 2:-z
-                break;
-            case 3:
-                op.x = aabb.max.x; // 3:+x
-                break;
-            case 4:
-                op.y = aabb.max.y; // 4:+y
-                break;
-            case 5:
-                op.z = aabb.max.z; // 5:+z
-                break;
-        }
-        *rd = op - ro;
-        PPFloat d = rd->length();
-        *rd = *rd / d;
-        return d;
-    };
-    
     aabb.clear();
     aabb.expand(Vector3(-1.0, -4.0, -3.0));
     aabb.expand(Vector3(3.0,  2.0,  4.0));
@@ -223,4 +222,166 @@ TEST_CASE("AABB exact test [AABB]") {
         hd = hitRayAndAABBExact(aabb, ro, rd);
         REQUIRE(hd < 0.0);
     }
+}
+
+TEST_CASE("AABB distance test [AABB]") {
+    AABB aabb(Vector3(-3.0, -4.0, -2.0), Vector3(2.0,  3.0,  4.0));
+    
+    {
+        Vector3 rd, ro(2.0, 9.0, 8.0);
+        PPFloat d = genHitRay(aabb, 0.85, 5, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(3.0, -9.0, 2.0);
+        PPFloat d = genHitRay(aabb, 0.5, 1, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(5.0, -4.0, -7.0);
+        PPFloat d = genHitRay(aabb, 0.4, 2, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(5.0, -4.0, -7.0);
+        PPFloat d = genHitRay(aabb, 0.75, 3, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(-2.0, 9.0, 2.0);
+        PPFloat d = genHitRay(aabb, 0.4, 4, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(2.0, -4.0, 7.0);
+        PPFloat d = genHitRay(aabb, 0.6, 5, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(!aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    // inside
+    {
+        Vector3 rd, ro(1.0, -1.0, 2.0);
+        PPFloat d = genHitRay(aabb, 0.6, 0, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(-2.0, -2.0, 2.0);
+        PPFloat d = genHitRay(aabb, 0.4, 1, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(-2.5, 1.0, 1.0);
+        PPFloat d = genHitRay(aabb, 0.4, 2, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(-2.0, -1.0, 1.0);
+        PPFloat d = genHitRay(aabb, 0.4, 3, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(1.0, -3.0, 0.0);
+        PPFloat d = genHitRay(aabb, 0.25, 4, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
+    {
+        Vector3 rd, ro(1.0, -3.0, -1.0);
+        PPFloat d = genHitRay(aabb, 0.4, 5, ro, &rd);
+        Ray ray(ro, rd);
+        
+        PPFloat xhd = hitRayAndAABBExact(aabb, ro, rd);
+        PPFloat hd = aabb.intersectDistance(ray);
+        
+        REQUIRE(aabb.isInside(ro));
+        REQUIRE_EQ(d, doctest::Approx(xhd).epsilon(kTestEPS));
+        REQUIRE_EQ(d, doctest::Approx(hd).epsilon(kTestEPS));
+    }
+    
 }

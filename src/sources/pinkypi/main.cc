@@ -22,6 +22,8 @@ int main(int argc, char* argv[])
         config.parseOptions(argc, argv);
     }
     
+    config.print();
+    
     // check output dir?
     
     PinkyPi::AssetLibrary *assetlib = nullptr;
