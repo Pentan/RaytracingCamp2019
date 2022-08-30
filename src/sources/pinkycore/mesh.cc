@@ -100,13 +100,11 @@ PPFloat Mesh::Triangle::intersection(const Ray& ray, PPFloat nearhit, PPFloat fa
     return t;
 }
 
-Mesh::Mesh():
-    triangleBVH(nullptr)
+Mesh::Mesh()
 {
 }
 
 Mesh::~Mesh() {
-    delete triangleBVH;
 }
 
 void Mesh::setGlobalTransform(const Matrix4 &m) {
@@ -119,7 +117,8 @@ void Mesh::setGlobalTransform(const Matrix4 &m) {
 void Mesh::preprocess() {
     
     bounds.clear();
-    triangleBVH = new BVH(totalTriangles);
+    triangleBVH = std::unique_ptr<BVH>(new BVH(totalTriangles));
+    auto* bvh = triangleBVH.get();
     
     // int triangles
     PPFloat meshArea = 0.0;
@@ -142,13 +141,15 @@ void Mesh::preprocess() {
             
             c->bounds.expand(tri.bound);
             clusterArea += tri.area;
+
+            bvh->appendLeaf(&tri.bound);
         }
         c->area = clusterArea;
         bounds.expand(c->bounds);
         meshArea += c->area;
     }
 
-    // build BVH ?
+    bvh->build();
 }
 
 PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const
@@ -157,35 +158,78 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
         return -1.0;
     }
     
-    // blute force -----
-    int numCls = static_cast<int>(clusters.size());
     PPFloat mint = -1.0;
     int triId = -1;
     int clusterId = -1;
     PPFloat vcb = 0.0;
     PPFloat vcc = 0.0;
+    PPFloat fart = farhit;
+
+#if 0
+    // blute force -----
+    int numCls = static_cast<int>(clusters.size());
     for(int icls = 0; icls < numCls; icls++) {
         const Cluster *cls = clusters[icls].get();
-        if(!cls->bounds.isIntersect(ray, nearhit, farhit)) {
+        if(!cls->bounds.isIntersect(ray, nearhit, fart)) {
             continue;
         }
         
         int numTris = static_cast<int>(cls->triangles.size());
         for(int itri = 0; itri < numTris; itri++) {
             const Triangle& tri = cls->triangles[itri];
-            PPFloat thit = tri.intersection(ray, nearhit, farhit, &vcb, &vcc);
+            PPFloat tb = 0.0;
+            PPFloat tc = 0.0;
+            PPFloat thit = tri.intersection(ray, nearhit, fart, &tb, &tc);
             if(thit > 0.0) {
                 if(mint > thit || mint < 0.0) {
                     mint = thit;
+                    fart = thit;
                     triId = itri;
                     clusterId = icls;
+                    vcb = tb;
+                    vcc = tc;
                 }
             }
         }
     }
     //-----
-    
+#else
+    struct {
+        PPFloat mint;
+        int clusterId;
+        int triId;
+        PPFloat vb, vc;
+    } hitInfo;
+
+    hitInfo.mint = -1.0;
+    mint = triangleBVH->intersect(ray, nearhit, farhit, [this, &hitInfo](const Ray& ray, PPFloat neart, PPFloat fart, const AABB* tribnd) {
+        const int clsId = tribnd->dataId;
+        const int triId = tribnd->subDataId;
+        const Triangle& tri = clusters[clsId]->triangles[triId];
+        PPFloat b;
+        PPFloat c;
+        PPFloat t = tri.intersection(ray, neart, fart, &b, &c);
+        if (t > 0.0) {
+            if (hitInfo.mint > t || hitInfo.mint < 0.0) {
+                hitInfo.mint = t;
+                hitInfo.triId = triId;
+                hitInfo.clusterId = clsId;
+                hitInfo.vb = b;
+                hitInfo.vc = c;
+            }
+        }
+        return t;
+    });
+
+    clusterId = hitInfo.clusterId;
+    triId = hitInfo.triId;
+    vcb = hitInfo.vb;
+    vcc = hitInfo.vc;
+
+#endif
+
     if(oisect != nullptr) {
+        oisect->meshId = assetId;
         oisect->clusterId = clusterId;
         oisect->triangleId = triId;
         oisect->vcb = vcb;
@@ -205,8 +249,9 @@ sourceCluster(src)
     
     wholeTriBounds.resize(sourceCluster->triangles.size());
     for (size_t i = 0; i < wholeTriBounds.size(); i++) {
+        const auto& tri = sourceCluster->triangles[i];
+        wholeTriBounds[i] = tri.bound;
         wholeTriBounds[i].clear();
-        wholeTriBounds[i].dataId = static_cast<int>(i); // triangle index
     }
     wholeBounds.clear();
 
@@ -344,56 +389,122 @@ MeshCache::CachedAttribute MeshCache::ClusterCache::interpolatedCache(int vid, P
 }
 
 MeshCache::MeshCache(Mesh* m, int numslice) : mesh(m), sliceCount(numslice) {
+    skinedBVH = std::unique_ptr<BVH>(new BVH(mesh->totalTriangles));
+    auto* bvh = skinedBVH.get();
+
     size_t numclstr = mesh->clusters.size();
     clusterCaches.resize(numclstr);
     for(size_t i = 0; i < numclstr; i++) {
         auto* cc = new ClusterCache(mesh->clusters[i].get(), sliceCount);
         clusterCaches[i] = std::unique_ptr<ClusterCache>(cc);
+        
+        for (size_t itr = 0; itr < cc->wholeTriBounds.size(); itr++) {
+            bvh->appendLeaf(&cc->wholeTriBounds[itr]);
+        }
     }
 }
 
+void MeshCache::updateBVH() {
+    auto* bvh = skinedBVH.get();
+    bvh->updateAllLeafBounds();
+    bvh->build();
+}
+
 PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
-    // blute force -----
-    int numCls = static_cast<int>(clusterCaches.size());
+
     PPFloat mint = -1.0;
     int triId = -1;
     int clusterId = -1;
     PPFloat vcb = 0.0;
     PPFloat vcc = 0.0;
-    
+
+#if 0
+    // blute force -----
+    int numCls = static_cast<int>(clusterCaches.size());
     Mesh::Triangle tmptri;
-    PPTimeType slicerate = timerate * sliceCount;
-    int sliceId = static_cast<int>(slicerate);
-    PPTimeType sliceT = slicerate - std::floor(slicerate);
+    PPFloat fatt = farhit;
     for(int icls = 0; icls < numCls; icls++) {
         const auto *ccache = clusterCaches[icls].get();
-        if(!ccache->wholeBounds.isIntersect(ray, nearhit, farhit)) {
-            continue;
-        }
+        //if(!ccache->wholeBounds.isIntersect(ray, nearhit, fatt)) {
+        //    continue;
+        //}
         
         const auto *cls = mesh->clusters[icls].get();
         int numTris = static_cast<int>(cls->triangles.size());
         for(int itri = 0; itri < numTris; itri++) {
             const auto& tri = cls->triangles[itri];
+
+            if (!ccache->wholeTriBounds[itri].isIntersect(ray, nearhit, fatt)) continue;
             
             auto cva = ccache->interpolatedCache(tri.a, timerate);
             auto cvb = ccache->interpolatedCache(tri.b, timerate);
             auto cvc = ccache->interpolatedCache(tri.c, timerate);
             
             tmptri.initialize(cva.vertex, cvb.vertex, cvc.vertex);
-            PPFloat thit = tmptri.intersection(ray, nearhit, farhit, &vcb, &vcc);
+            PPFloat b;
+            PPFloat c;
+            PPFloat thit = tmptri.intersection(ray, nearhit, fatt, &b, &c);
             if(thit > 0.0) {
                 if(mint > thit || mint < 0.0) {
                     mint = thit;
+                    fatt = thit;
                     triId = itri;
                     clusterId = icls;
+                    vcb = b;
+                    vcc = c;
                 }
             }
         }
     }
+
     //-----
-    
+#else
+    // BVH
+    struct {
+        PPFloat mint;
+        int clusterId;
+        int triId;
+        PPFloat vb, vc;
+    } hitInfo;
+
+    hitInfo.mint = -1.0;
+    mint = skinedBVH->intersect(ray, nearhit, farhit, [this, &hitInfo, timerate](const Ray& ray, PPFloat neart, PPFloat fart, const AABB* tribnd) {
+        const int clsId = tribnd->dataId;
+        const int triId = tribnd->subDataId;
+        const auto* cls = mesh->clusters[clsId].get();
+        const auto& tri = cls->triangles[triId];
+        const auto* ccache = clusterCaches[clsId].get();
+
+        auto cva = ccache->interpolatedCache(tri.a, timerate);
+        auto cvb = ccache->interpolatedCache(tri.b, timerate);
+        auto cvc = ccache->interpolatedCache(tri.c, timerate);
+
+        Mesh::Triangle tmptri;
+        tmptri.initialize(cva.vertex, cvb.vertex, cvc.vertex);
+
+        PPFloat b;
+        PPFloat c;
+        PPFloat t = tmptri.intersection(ray, neart, fart, &b, &c);
+        if (t > 0.0) {
+            if (hitInfo.mint > t || hitInfo.mint < 0.0) {
+                hitInfo.mint = t;
+                hitInfo.triId = triId;
+                hitInfo.clusterId = clsId;
+                hitInfo.vb = b;
+                hitInfo.vc = c;
+            }
+        }
+        return t;
+    });
+
+    clusterId = hitInfo.clusterId;
+    triId = hitInfo.triId;
+    vcb = hitInfo.vb;
+    vcc = hitInfo.vc;
+#endif
+
     if(oisect != nullptr) {
+        oisect->meshId = mesh->assetId;
         oisect->clusterId = clusterId;
         oisect->triangleId = triId;
         oisect->vcb = vcb;
@@ -401,4 +512,12 @@ PPFloat MeshCache::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit,
     }
     
     return mint;
+}
+
+void Mesh::triangleAttributes(int clusterId, int triangleId, Attributes* oattr3) const {
+    auto* cls = clusters[clusterId].get();
+    auto& tri = cls->triangles[triangleId];
+    oattr3[0] = cls->attributesAt(tri.a);
+    oattr3[1] = cls->attributesAt(tri.b);
+    oattr3[2] = cls->attributesAt(tri.c);
 }

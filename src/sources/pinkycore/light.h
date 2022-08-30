@@ -8,6 +8,8 @@
 
 namespace PinkyPi {
     
+    class Node;
+
     class Light {
     public:
         enum LightType {
@@ -16,10 +18,18 @@ namespace PinkyPi {
             kDirectionalLight,
             kMeshLight
         };
+
+        struct EvalLog {
+            Vector3 position;
+            Vector3 direction;
+            PPFloat lightPdf;
+        };
         
     public:
         Light();
         ~Light();
+
+        Color evaluate(const Node* node, const SurfaceInfo& surf, PPTimeType timerate, EvalLog* log) const;
         
         std::string name;
         Color color;

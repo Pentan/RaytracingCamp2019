@@ -3,6 +3,7 @@
 
 #include <pinkycore/assetlibrary.h>
 #include <pinkycore/scene.h>
+#include <pinkycore/bvh.h>
 #include <pinkycore/renderer.h>
 #include <pinkycore/config.h>
 #include <pinkycore/postprocessor.h>

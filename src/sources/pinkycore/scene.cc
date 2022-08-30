@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "light.h"
 #include "mesh.h"
+#include "bvh.h"
 #include "material.h"
 #include "tracablestructure.h"
 #include "animation.h"
@@ -35,6 +36,15 @@ bool Scene::preprocess(Config* config) {
     }
     
     backgroundTexture = assetLib->backgroundTex.get();
+    
+    int numtrac = static_cast<int>(tracables.size());
+    objectBVH = std::unique_ptr<BVH>(new BVH(numtrac));
+    auto* bvh = objectBVH.get();
+    for(int i = 0; i < numtrac; i++) {
+        auto* trc = tracables[i]->tracable.get();
+        trc->globalBounds.dataId = i;
+        objectBVH->appendLeaf(&trc->globalBounds);
+    }
     
     return true;
 }
@@ -146,12 +156,11 @@ void Scene::seekTime(PPTimeType opentime, PPTimeType closetime, int slice, int s
 
 PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPTimeType timerate, SceneIntersection *oisect) const {
     MeshIntersection meshisect;
-    int meshid = -1;
-    
-    // TODO object BVH
-    
-    // blute force -----
+    int traceableid = -1;
     PPFloat mint = -1.0;
+
+#if 0
+    // blute force -----
     int numMeshes = static_cast<int>(tracables.size());
     for(int i = 0; i < numMeshes; i++) {
         MeshIntersection isect;
@@ -161,14 +170,46 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPT
             if(mint > t || mint < 0.0) {
                 mint = t;
                 meshisect = isect;
-                meshid = trc->mesh->assetId;
+                traceableid = i;
             }
         }
     }
+    
+    if(mint < 0.0) {
+        return mint;
+    }
+    
     //-----
+#else
+    struct {
+        MeshIntersection meshisect;
+        int traceableid;
+        PPFloat mint;
+    } hitinfo;
+    
+    hitinfo.mint = -1.0;
+    mint = objectBVH->intersect(ray, hitnear, hitfar, [this, &hitinfo, &timerate](const Ray& ray, PPFloat neart, PPFloat fart, const AABB* bnd) {
+        MeshIntersection isect;
+        auto* trc = tracables[bnd->dataId]->tracable.get();
+        PPFloat t = trc->intersection(ray, neart, fart, timerate, &isect);
+        if(t > 0.0) {
+            if(hitinfo.mint > t || hitinfo.mint < 0.0) {
+                hitinfo.mint = t;
+                hitinfo.meshisect = isect;
+                hitinfo.traceableid = bnd->dataId;
+            }
+        }
+        return t;
+    });
+    
+    mint = hitinfo.mint;
+    traceableid = hitinfo.traceableid;
+    meshisect = hitinfo.meshisect;
+    
+#endif
     
     if(mint > 0.0 && oisect != nullptr) {
-        oisect->meshId = meshid;
+        oisect->tracableId = traceableid;
         oisect->meshIntersect = meshisect;
     }
     
@@ -176,17 +217,18 @@ PPFloat Scene::intersection(const Ray& ray, PPFloat hitnear, PPFloat hitfar, PPT
 }
 
 void Scene::computeIntersectionDetail(const Ray& ray, PPFloat hitt, PPTimeType timerate, const SceneIntersection& isect, IntersectionDetail* odetail) const {
-    auto* trc = tracables[isect.meshId]->tracable.get();
+    auto* trc = tracables[isect.tracableId]->tracable.get();
     trc->intersectionDetail(ray, hitt, timerate, isect.meshIntersect, odetail);
 }
 
 void Scene::buildAccelerationStructure(int storeId) {
     (void)storeId; // TODO? multi buffering
     
-    // build local AS
     for (auto ite = tracables.begin(); ite != tracables.end(); ++ite) {
         (*ite)->tracable->updateFinished();
     }
-
-    // build AS
+    
+    auto* bvh = objectBVH.get();
+    bvh->updateAllLeafBounds();
+    bvh->build();
 }

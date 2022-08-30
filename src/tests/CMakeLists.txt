@@ -32,6 +32,9 @@ set(PINKYCORE_TESTS_SRCS
     ${PINKYCORE_TEST_DIR}/configTests.cc
     ${PINKYCORE_TEST_DIR}/animationTests.cc
     ${PINKYCORE_TEST_DIR}/rayTests.cc
+    ${PINKYCORE_TEST_DIR}/bvhTests.cc
+    ${PINKYCORE_TEST_DIR}/textureTests.cc
+    ${PINKYCORE_TEST_DIR}/materialTests.cc
 )
 source_group(coreTests FILES ${PINKYCORE_TESTS_SRCS})
 

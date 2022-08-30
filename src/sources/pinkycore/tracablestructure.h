@@ -20,7 +20,7 @@ namespace PinkyPi {
         Mesh* mesh;
         Node* ownerNode;
         Matrix4 invGlobalMatrix;
-        AABB globalBounds;
+        AABB globalBounds; // dataId: index in scene
 
         TracableStructure(Node* owner, Mesh* m) : ownerNode(owner), mesh(m) {};
         virtual ~TracableStructure() {}

@@ -7,6 +7,7 @@ namespace PinkyPi {
     
     class SceneLoader {
     public:
+        // this is thread unsafe
         static AssetLibrary* load(std::string filepath);
     };
 }

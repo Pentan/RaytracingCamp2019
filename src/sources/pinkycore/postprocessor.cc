@@ -8,11 +8,13 @@
 using namespace PinkyPi;
 
 PostProcessor::PostProcessor() :
-    exportGamma(2.2)
+    sourceBuffer(nullptr),
+    exportGamma(2.2),
+    frameId(0)
 {
 }
 
-int PostProcessor::init(const FrameBuffer *srcbuf, const std::string path, int tilesize, double gamma) {
+int PostProcessor::init(const FrameBuffer *srcbuf, const std::string path, int tilesize, double gamma, int frmid) {
     sourceBuffer = srcbuf;
     FrameBuffer* pfb = processedBuffer.get();
     if(pfb == nullptr || pfb->getWidth() != sourceBuffer->getWidth() || pfb->getHeight() != sourceBuffer->getHeight()) {
@@ -24,6 +26,7 @@ int PostProcessor::init(const FrameBuffer *srcbuf, const std::string path, int t
     remainingJobs.store(numjobs);
     savePath = path;
     exportGamma = gamma;
+    frameId = frmid;
     return numjobs;
 }
 
@@ -43,7 +46,7 @@ int PostProcessor::process(int jobid) {
     return remainingJobs.fetch_sub(1);
 }
 
-bool PostProcessor::writeToFile() {
+bool PostProcessor::writeToFile(bool printlog) {
     auto pfb = processedBuffer.get();
     int w = pfb->getWidth();
     int h = pfb->getHeight();
@@ -68,12 +71,16 @@ bool PostProcessor::writeToFile() {
     }
     
     auto l = savePath.length();
+    int saved = 0;
     if(savePath[l-4] == '.' && savePath[l-3] == 'j' && savePath[l-2] == 'p' && savePath[l-1] == 'g') {
-        stbi_write_jpg(savePath.c_str(), w, h, 3, rgb8buf.data(), 80);
+        saved = stbi_write_jpg(savePath.c_str(), w, h, 3, rgb8buf.data(), 80);
     } else {
-        stbi_write_png(savePath.c_str(), w, h, 3, rgb8buf.data(), 0);
+        saved = stbi_write_png(savePath.c_str(), w, h, 3, rgb8buf.data(), 0);
     }
-    std::cout << "saved:" << savePath << std::endl;
+
+    if(printlog) {
+        std::cout << "saved:" << savePath << std::endl;
+    }
     
-    return true;
+    return saved != 0;
 }

@@ -108,6 +108,26 @@ void Config::parseOptions(int argc, char* argv[]) {
         } else if(strcmp(v, "-ss") == 0 && hasnext) {
             pixelSubSamples = std::atoi(argv[i + 1]);
             i += 1;
+        } else if(strcmp(v, "-es") == 0 && hasnext) {
+            std::string vv(argv[i + 1]);
+            auto divi = vv.find('/');
+            if(divi > 0) {
+                std::string us = vv.substr(0, divi);
+                std::string ls = vv.substr(divi + 1);
+                exposureSecond = std::atof(us.c_str()) / std::atof(ls.c_str());
+            } else {
+                exposureSecond = std::atof(vv.c_str());
+            }
+            i += 1;
+        } else if(strcmp(v, "-esl") == 0 && hasnext) {
+            exposureSlice = std::atoi(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-lm") == 0 && hasnext) {
+            limitSec = std::atof(argv[i + 1]);
+            i += 1;
+        } else if(strcmp(v, "-pi") == 0 && hasnext) {
+            progressIntervalSec = std::atof(argv[i + 1]);
+            i += 1;
         }
     }
 }
@@ -122,7 +142,7 @@ void Config::print() const {
     std::cout << "depth min:" << minDepth << ", max:" << maxDepth << ", cutoff:" << minRussianRouletteCutOff << "\n";
     std::cout << "input:" << inputFile << "\n";
     std::cout << "outputDir:" << outputDir << "\n";
-    std::cout << "outputName" << outputName << "*." << outputExt << "\n";
+    std::cout << "outputName:" << outputName << "*." << outputExt << "\n";
     std::cout << "--- config end ---" << std::endl;
 }
 

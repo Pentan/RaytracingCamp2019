@@ -29,6 +29,7 @@ namespace PinkyPi {
         bool scrambleTile;
         
         double limitSec;
+        double limitMargin;
         double progressIntervalSec;
         int maxThreads;
         
@@ -41,7 +42,7 @@ namespace PinkyPi {
         std::string outputExt;
 
     public:
-        Config():
+        Config() :
             width(320),
             height(270),
             frames(1),
@@ -57,7 +58,8 @@ namespace PinkyPi {
             framebufferStockCount(3),
             tileSize(64),
             scrambleTile(true),
-            limitSec(60.0),
+            limitSec(-1.0),
+            limitMargin(1.0),
             progressIntervalSec(-1.0),
             maxThreads(0),
             quietProgress(false),

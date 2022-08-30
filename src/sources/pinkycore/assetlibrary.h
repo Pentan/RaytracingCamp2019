@@ -26,7 +26,7 @@ namespace PinkyPi {
         
         Texture* getTexture(int i) const    { return textures[i].get(); }
         Material* getMaterial(int i) const  { return materials[i].get(); }
-        Material* getMaterial(int meshId, int clusterId) const;
+        // Material* getMaterial(int meshId, int clusterId) const;
         Mesh* getMesh(int i) const          { return meshes[i].get(); }
         Light* getLight(int i) const        { return lights[i].get(); }
         Node* getNode(int i) const          { return nodes[i].get(); }

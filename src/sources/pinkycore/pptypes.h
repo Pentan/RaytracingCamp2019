@@ -50,6 +50,14 @@ namespace PinkyPi {
         IntVec4* joints0;
         Vector4* weights0;
     };
+
+    // surface
+    struct SurfaceInfo {
+        Vector3 position;
+        Vector3 geometryNormal;
+        Vector3 shadingNormal;
+        Vector3* uv0;
+    };
 }
 
 #endif

@@ -33,7 +33,14 @@ namespace PinkyPi {
         Texture() {};
         virtual ~Texture() {};
         
-        virtual TexcelSample sample(PPFloat x, PPFloat y) const = 0;
+        // (0,0) to (1,1)
+        virtual TexcelSample sample(PPFloat x, PPFloat y, bool gammacorrect) const = 0;
+
+        TexcelSample sampleEquirectangular(const Vector3& v, bool gc) const {
+            PPFloat theta = std::acos(v.y) / kPI;
+            PPFloat phi = std::atan2(v.z, v.x) / kPI * 0.5 + 0.5;
+            return sample(phi, theta, gc);
+        }
         
         std::string name;
     };
@@ -54,7 +61,7 @@ namespace PinkyPi {
         ImageTexture(int w, int h);
         virtual ~ImageTexture();
         
-        virtual TexcelSample sample(PPFloat x, PPFloat y) const;
+        virtual TexcelSample sample(PPFloat x, PPFloat y, bool gammacorrect) const;
         
         void fillColor(const Color rgb, PPColorType a, double gamma);
         
@@ -62,14 +69,23 @@ namespace PinkyPi {
         void initWith16BPPImage(const unsigned short *src, int comps, double gamma);
         void initWithFpImage(const float *src, int comps, double gamma);
         
+        static ImageTexture* loadImageFile(std::string path);
+        
     public:
         int width;
         int height;
         bool hasAlpha;
+        PPFloat gamma;
         
         SampleType sampleType;
         WrapType wrapX;
         WrapType wrapY;
+
+        void setWrap(WrapType wx, WrapType wy) {
+            wrapX = wx;
+            wrapY = wy;
+        }
+        void setWrap(WrapType w) { setWrap(w, w); }
         
     private:
         TexcelSample *image;

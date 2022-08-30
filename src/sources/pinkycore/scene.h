@@ -19,6 +19,7 @@ namespace PinkyPi {
     class TracableStructure;
     class Config;
     class Texture;
+    class BVH;
     
     /////
     class Scene {
@@ -29,6 +30,8 @@ namespace PinkyPi {
         AssetLibrary* assetLib;
         std::vector<Node*> topLevelNodes;
         std::vector<Node*> containsNodes;
+        
+        std::unique_ptr<BVH> objectBVH;
 
     public:
         // for trace

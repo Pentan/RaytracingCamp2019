@@ -20,12 +20,13 @@ namespace PinkyPi {
     
     class Renderer {
     private:
+        // config
         int samplesPerPixel;
         int pixelSubSamples;
         
         int minDepth;
         int maxDepth;
-        float minRussianRouletteCutOff;
+        PPFloat minRussianRouletteCutOff;
         
         int renderFrames;
         int startFrame;
@@ -36,8 +37,10 @@ namespace PinkyPi {
         std::string saveExt;
         
         double limitSecPerFrame;
+        double limitSecMargin;
         double progressIntervalSec;
         
+        // contexts
         struct Context {
             Random random;
             FrameBuffer* framebuffer;
@@ -83,7 +86,10 @@ namespace PinkyPi {
             
             union {
                 struct {
-                    int tileIndex;
+                    int frameId;
+                    int tileInfoIndex;
+                    int samples;
+                    int subSamples;
                 } render;
                 struct {
                     PostProcessor* processor;
@@ -99,6 +105,7 @@ namespace PinkyPi {
             kStart,
             kWaiting,
             kProcessing,
+            kDone,
             kStopped,
             kNumWorkerStatus
         };
@@ -106,6 +113,11 @@ namespace PinkyPi {
         struct WorkerInfo {
             CommandType commandType;
             WorkerStatus status;
+        };
+
+        struct TileInfo {
+            PPTimeType processTime;
+            int tileIndex;
         };
         
     public:
@@ -118,7 +130,7 @@ namespace PinkyPi {
         ~Renderer();
         
         void render();
-        void pathtrace(const Ray& ray, const Scene* scn, Context* cntx, RenderResult *result);
+        void pathtrace(const Ray& iray, const Scene* scn, Context* cntx, RenderResult *result);
         
         static void startWorker(int workerid, Renderer* rndr);
         void wokerMain(int workerid);
@@ -133,17 +145,25 @@ namespace PinkyPi {
         // FrameBuffer* currentFramebuffer;
         std::vector<std::thread> workerPool;
         std::vector<WorkerInfo> workerInfos;
+        // std::mutex workerInfoMutex;
+        std::atomic<int> processingWorkerCount;
         std::queue<JobCommand> commandQueue;
         std::queue<JobCommand> interruptQueue;
         std::mutex commandQueueMutex;
         std::condition_variable workerCondition;
         std::condition_variable managerCondition;
         bool stopWorkers;
+        int renderingFrameId;
+
+        std::vector<TileInfo> tileInfos;
         
-        void renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime);
+        void pushRenderCommands(FrameBuffer* fb, int frameID, int spp, int ss);
+        void renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType opentime, PPTimeType closetime, int frameId);
         void postProcessAndSave(FrameBuffer* fb, PostProcessor* pp, int frameid);
         void waitAllCommands();
         void waitAllAndLog();
+        void waitRenderUntil(FrameBuffer* fb, int frameId, double startTime, double timeLimit);
+        double checkPrintProcessLog(double logedTime);
         void processAllCommands();
         void setupWorkers();
         void cleanupWorkers();

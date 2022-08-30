@@ -7,6 +7,7 @@
 #include <pinkycore/pptypes.h>
 #include <pinkycore/assetlibrary.h>
 #include <pinkycore/scene.h>
+#include <pinkycore/bvh.h>
 
 #include <pinkypi/sceneloader.h>
 

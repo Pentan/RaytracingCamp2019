@@ -6,8 +6,9 @@
 //
 
 #include "light.h"
-
 #include "pptypes.h"
+#include "node.h"
+
 using namespace PinkyPi;
 
 Light::Light():
@@ -20,4 +21,35 @@ Light::Light():
 
 Light::~Light() {
     
+}
+
+Color Light::evaluate(const Node* node, const SurfaceInfo& surf, PPTimeType timerate, EvalLog* log) const {
+    Color ret;
+
+    switch (lightType)
+    {
+        case kPointLight:
+        {
+            Vector3 lp = Matrix4::transformV3(node->computeGlobalMatrix(timerate), Vector3(0.0, 0.0, 0.0));
+            Vector3 lv = lp - surf.position;
+            PPFloat ll = lv.length();
+            lv = lv / ll;
+            ret = color * intensity / (ll * ll);
+
+            log->lightPdf = 1.0;
+            log->position = lp;
+            log->direction = lv;
+        }
+            break;
+        case kDirectionalLight:
+            break;
+        case kSpotLight:
+            break;
+        case kMeshLight:
+            break;
+        default:
+            break;
+    }
+
+    return ret;
 }

@@ -13,6 +13,7 @@
 namespace PinkyPi {
     //
     struct MeshIntersection {
+        int meshId;
         int clusterId;
         int triangleId;
         PPFloat vcb;
@@ -21,7 +22,7 @@ namespace PinkyPi {
     
     /////
     struct SceneIntersection {
-        int meshId;
+        int tracableId;
         MeshIntersection meshIntersect;
     };
 
@@ -37,7 +38,7 @@ namespace PinkyPi {
         Attributes vertexAttributes[3];
         int uvCount;
         int colorCount;
-
+        
         int materialId;
     };
 }

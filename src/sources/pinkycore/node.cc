@@ -8,6 +8,7 @@
 #include "node.h"
 #include "mesh.h"
 #include "tracablestructure.h"
+#include "bvh.h"
 
 #include "pptypes.h"
 using namespace PinkyPi;

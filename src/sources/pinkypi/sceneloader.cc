@@ -25,7 +25,7 @@
 #include <pinkycore/animation.h>
 #include <pinkycore/keyframesampler.h>
 #include <pinkycore/skin.h>
-//#include <pinkycore/>
+#include <pinkycore/bvh.h>
 //#include <pinkycore/>
 
 #include "sceneloader.h"
@@ -34,7 +34,7 @@ using namespace PinkyPi;
 
 namespace {
     // Constants
-    std::string kExtraKey = "PinkyPi-Extra";
+    std::string kExtraPrefix = "PinkyPi-Extra-";
 
     // Temporal vars
     struct SkinedMeshNode {
@@ -42,6 +42,7 @@ namespace {
         Node* node;
     };
     std::vector<SkinedMeshNode>* skinedMeshNodes;
+    std::map<int, std::string>* bgImagePaths;
     
     // Utility Classes
     class BufferAccessor {
@@ -241,11 +242,11 @@ namespace {
     };
     
     // Utility functions
-    const tinygltf::Value FindPinkyPiExtra(const tinygltf::Value& val) {
+    tinygltf::Value FindPinkyPiExtra(const tinygltf::Value& val, const std::string& targetKey) {
         if(val.IsArray()) {
             size_t n = val.ArrayLen();
             for(size_t i = 0; i < n; i++) {
-                auto& v = FindPinkyPiExtra(val.Get(static_cast<int>(i)));
+                auto v = FindPinkyPiExtra(val.Get(static_cast<int>(i)), targetKey);
                 if(v.Type() != tinygltf::NULL_TYPE) {
                     return v;
                 }
@@ -255,19 +256,23 @@ namespace {
             const auto& keys = val.Keys();
             for(auto ite = keys.begin(); ite != keys.end(); ++ite) {
                 auto& k = *ite;
-                if(k.compare(kExtraKey) == 0) {
-                    return val.Get(kExtraKey);
+                if(k.compare(targetKey) == 0) {
+                    return val.Get(targetKey);
                     
                 } else {
                     auto& v = val.Get(k);
                     if(v.IsObject() || v.IsArray()) {
-                        return FindPinkyPiExtra(v);
+                        return FindPinkyPiExtra(v, targetKey);
                     }
                 }
             }
         }
         
         return tinygltf::Value();
+    }
+    
+    std::string getPinkyPiExtraKey(std::string key) {
+        return kExtraPrefix + key;
     }
     
     // Parse functions
@@ -283,12 +288,9 @@ namespace {
             const tinygltf::Image& gltfimg = model.images.at(gltftex.source);
             
             double gamma = 2.2;
-            auto& ppextra = FindPinkyPiExtra(gltfimg.extras);
-            if(ppextra.Type() != tinygltf::NULL_TYPE) {
-                if(ppextra.Has("gamma")) {
-                    auto& val = ppextra.Get("gamma");
-                    gamma = val.IsInt()? val.Get<int>() : val.Get<double>();
-                }
+            auto ppextra = FindPinkyPiExtra(gltfimg.extras, getPinkyPiExtraKey("gamma"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                gamma = ppextra.IsInt() ? ppextra.Get<int>() : ppextra.Get<double>();
             }
             
             ImageTexture *imgtex = new ImageTexture(gltfimg.width, gltfimg.height);
@@ -465,15 +467,13 @@ namespace {
             }
             
             // extra
-            auto& ppextra = FindPinkyPiExtra(gltfmat.extras);
-            if(ppextra.Type() != tinygltf::NULL_TYPE) {
-                if(ppextra.Has("ior")) {
-                    mat->ior = ppextra.Get("ior").Get<PPFloat>();
-                }
-                // and more...
+            auto ppextra = FindPinkyPiExtra(gltfmat.extras, getPinkyPiExtraKey("ior"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                mat->ior = ppextra.Get<PPFloat>();
             }
             
             // Add
+            mat->assetId = count;
             assetlib->materials.push_back(std::shared_ptr<Material>(mat));
             count += 1;
         }
@@ -1020,17 +1020,18 @@ namespace {
                 continue;
             }
             
-            auto& ppextra = FindPinkyPiExtra(gltfcam.extras);
-            if(ppextra.Type() != tinygltf::NULL_TYPE) {
-                if(ppextra.Has("focalLength")) {
-                    cam->focalLength = ppextra.Get("focalLength").Get<PPFloat>();
-                }
-                if(ppextra.Has("fNumber")) {
-                    cam->fNumber = ppextra.Get("fNumber").Get<PPFloat>();
-                }
-                if(ppextra.Has("focusDistance")) {
-                    cam->focusDistance = ppextra.Get("focusDistance").Get<PPFloat>();
-                }
+            tinygltf::Value ppextra;
+            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focalLength"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                cam->focalLength = ppextra.Get<PPFloat>();
+            }
+            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("fNumber"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                cam->fNumber = ppextra.Get<PPFloat>();
+            }
+            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focusDistance"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                cam->focusDistance = ppextra.Get<PPFloat>();
             }
             
             //
@@ -1165,6 +1166,12 @@ namespace {
                     scn->topLevelNodes.push_back(node);
                 }
             }
+
+            auto ppextra = FindPinkyPiExtra(gltfscene.extras, getPinkyPiExtraKey("background"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                auto bgimg = ppextra.Get<std::string>();
+                bgImagePaths->insert(std::pair(count, bgimg));
+            }
             
             assetlib->scenes.push_back(std::shared_ptr<Scene>(scn));
             count += 1;
@@ -1174,57 +1181,70 @@ namespace {
     
     void LoadBackgroundTexture(const std::string path, AssetLibrary *assetlib) {
         if(path.length() > 0) {
-            // load from file
+            auto tex = ImageTexture::loadImageFile(path);
+            assetlib->backgroundTex = std::shared_ptr<Texture>(tex);
         } else {
-            std::vector<unsigned char> buf(8 * 4 * 4);
-            unsigned char* data = buf.data();
-            for(int iy = 0; iy < 4; iy++) {
-                unsigned char c = iy * 64 + 15;
-                data[0] = 0xff;
-                data[1] = c;
-                data[2] = c;
-                data[3] = 0xff;
-                
-                data[4] = c;
-                data[5] = 0xff;
-                data[6] = c;
-                data[7] = 0xff;
-                
-                data[8]  = c;
-                data[9]  = 0x80;
-                data[10] = c;
-                data[11] = 0xff;
-                
-                data[12] = c;
-                data[13] = c;
-                data[14] = 0xff;
-                data[15] = 0xff;
-                
-                data[16] = c;
-                data[17] = c;
-                data[18] = 0x80;
-                data[19] = 0xff;
-                
-                data[20] = c;
-                data[21] = 0xff;
-                data[22] = 0xff;
-                data[23] = 0xff;
-                
-                data[24] = c;
-                data[25] = 0x80;
-                data[25] = 0x80;
-                data[27] = 0xff;
-                
-                data[28] = 0x80;
-                data[29] = c;
-                data[30] = c;
-                data[31] = 0xff;
-                
-                data += 32;
+            const int w = 1024;
+            const int h = 512;
+            
+            std::vector<float> buf(w * h * 4);
+            float* data = buf.data();
+
+            auto fract = [](float x) { return x - std::floor(x); };
+            const Vector3 azimcolTbl[8] = {
+                Vector3(0.2, 0.2, 0.5), // -z
+                Vector3(0.5, 0.2, 0.2), // -x
+                Vector3(0.6, 0.3, 0.3), // -x
+                Vector3(0.2, 0.2, 0.7), // +z
+                Vector3(0.3, 0.3, 0.9), // +z
+                Vector3(0.9, 0.3, 0.3), // +x
+                Vector3(0.7, 0.2, 0.2), // +x
+                Vector3(0.3, 0.3, 0.6)  // -z
+            };
+            const int aimcolNum = sizeof(azimcolTbl) / sizeof(azimcolTbl[0]);
+
+            for (int iy = 0; iy < h; iy++) {
+                float ty = static_cast<float>(iy) / h;
+                for (int ix = 0; ix < w; ix++) {
+                    float tx = static_cast<float>(ix) / w;
+                    float* pxl = data + (ix + iy * w) * 4;
+
+                    Vector3 c;
+                    bool checker = (fract(tx * 36.0f) > 0.5f) ^ (fract(ty * 18.0f) > 0.5f);
+                    c = (checker ? 0.5 : 1.0) * azimcolTbl[static_cast<int>(tx * 8.0f)];
+                    //c = azimcolTbl[static_cast<int>(tx * 8.0f)];
+                    //c = azimcolTbl[ix % aimcolNum];
+
+                    if (iy < h / 4) {
+                        c = Vector3::mul(c, Vector3(0.5, 1.0, 0.5));
+                    }
+                    else if (iy > h * 3 / 4) {
+                        c = Vector3::mul(c, Vector3(0.2, 0.8, 0.2));
+                    }
+                    else if (iy > h / 2) {
+                        c = Vector3::mul(c, Vector3(0.5, 0.5, 0.5));
+                    }
+
+                    if (iy < h / 8) {
+                        c += Vector3(0.8, 0.8, 0.8);
+                    }
+
+                    if ((ix % (w / 8)) < 1 || ((iy % (h / 8)) < 1)) {
+                        c.set(0.02, 0.02, 0.02);
+                    }
+                    if (((ix + 1) % (w / 2)) < 2 || (((iy + 1) % (h / 2)) < 2)) {
+                        c.set(0.2, 0.02, 0.02);
+                    }
+
+                    pxl[0] = static_cast<float>(c.x);
+                    pxl[1] = static_cast<float>(c.y);
+                    pxl[2] = static_cast<float>(c.z);
+                    pxl[3] = 1.0f;
+                }
             }
-            auto* tex = new ImageTexture(8, 4);
-            tex->initWith8BPPImage(buf.data(), 4, 2.2);
-            tex->sampleType = ImageTexture::kNearest;
+            
+            auto* tex = new ImageTexture(w, h);
+            tex->initWithFpImage(data, 4, 1.0);
             assetlib->backgroundTex = std::shared_ptr<Texture>(tex);
         }
     }
@@ -1247,6 +1267,7 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     
     AssetLibrary *assetLib = new AssetLibrary();
     skinedMeshNodes = new std::vector<SkinedMeshNode>();
+    bgImagePaths = new std::map<int, std::string>();
     
     ParseTextures(model, assetLib);
     ParseMaterials(model, assetLib);
@@ -1258,10 +1279,15 @@ AssetLibrary* SceneLoader::load(std::string filepath) {
     ParseAnimations(model, assetLib);
     ParseScenes(model, assetLib);
     
-    LoadBackgroundTexture(std::string(), assetLib);
-    
     assetLib->defaultSceneId = model.defaultScene;
+
+    if (bgImagePaths->find(assetLib->defaultSceneId) != bgImagePaths->end()) {
+        LoadBackgroundTexture(bgImagePaths->at(assetLib->defaultSceneId), assetLib);
+    } else {
+        LoadBackgroundTexture(std::string(), assetLib);
+    }
     
+    delete bgImagePaths;
     delete skinedMeshNodes;
     return assetLib;
 }

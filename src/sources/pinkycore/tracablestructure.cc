@@ -10,6 +10,8 @@
 #include "skin.h"
 #include "node.h"
 #include "ray.h"
+#include "bvh.h"
+#include "material.h"
 
 using namespace PinkyPi;
 
@@ -106,7 +108,7 @@ void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTim
 
     PPFloat wa = 1.0 - isect.vcb - isect.vcc;
     PPFloat wb = isect.vcb;
-    PPFloat wc = isect.vcb;
+    PPFloat wc = isect.vcc;
 
     odetail->barycentricCoord.set(wa, wb, wc);
     odetail->vertexAttributes[0] = attrA;
@@ -133,6 +135,8 @@ void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTim
     if (odetail->uvCount > 0) {
         odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;
     }
+    
+    odetail->materialId = cls->material->assetId;
 }
 
 // SkinMeshStructure
@@ -169,7 +173,7 @@ void SkinMeshStructure::updateSlice(int sliceId) {
 }
 
 void SkinMeshStructure::updateFinished() {
-    // TODO
+    cache->updateBVH();
 }
 
 PPFloat SkinMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const {
@@ -228,4 +232,6 @@ void SkinMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTimeT
     if (odetail->uvCount > 0) {
         odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;
     }
+    
+    odetail->materialId = cls->material->assetId;
 }

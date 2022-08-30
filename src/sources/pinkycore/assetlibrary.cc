@@ -2,6 +2,7 @@
 #include "pptypes.h"
 #include "assetlibrary.h"
 #include "mesh.h"
+#include "bvh.h"
 #include "material.h"
 #include "texture.h"
 #include "light.h"
@@ -19,6 +20,6 @@ AssetLibrary::~AssetLibrary() {
     
 }
 
-Material* AssetLibrary::getMaterial(int meshId, int clusterId) const {
-    return meshes[meshId]->clusters[clusterId]->material;
-}
+//Material* AssetLibrary::getMaterial(int meshId, int clusterId) const {
+//    return meshes[meshId]->clusters[clusterId]->material;
+//}

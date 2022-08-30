@@ -16,12 +16,13 @@ namespace PinkyPi {
         std::atomic<int> remainingJobs;
         std::string savePath;
         double exportGamma;
+        int frameId;
         
         PostProcessor();
         
-        int init(const FrameBuffer *srcbuf, const std::string path, int tilesize, double gamma);
+        int init(const FrameBuffer *srcbuf, const std::string path, int tilesize, double gamma, int frmid);
         int process(int jobid);
-        bool writeToFile();
+        bool writeToFile(bool printlog=true);
     };
 }
 

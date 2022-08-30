@@ -45,7 +45,7 @@ namespace PinkyPi {
             Vector3 normal;
             PPFloat area;
             PPFloat sampleBorder;
-            AABB bound;
+            AABB bound; // dataId: cluster index, subDataId: triangle index
             
             void initialize(const Vector3& va, const Vector3& vb, const Vector3& vc);
             PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPFloat *obb, PPFloat *obc) const;
@@ -90,13 +90,14 @@ namespace PinkyPi {
         Matrix4 invTransGlobalTransform;
         
         AABB bounds;
-        BVH *triangleBVH;
+        std::unique_ptr<BVH> triangleBVH;
         
         void setGlobalTransform(const Matrix4 &m);
         
         void preprocess();
         
         PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, MeshIntersection* oisect) const;
+        void triangleAttributes(int clusterId, int triangleId, Attributes* oattr3) const;
     };
     
     //
@@ -132,6 +133,7 @@ namespace PinkyPi {
         };
 
         Mesh* mesh;
+        std::unique_ptr<BVH> skinedBVH;
         std::vector<std::unique_ptr<ClusterCache> > clusterCaches;
         int sliceCount;
 
@@ -144,6 +146,7 @@ namespace PinkyPi {
             }
         }
 
+        void updateBVH();
         PPFloat intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, PPTimeType timerate, MeshIntersection* oisect) const;
     };
 }

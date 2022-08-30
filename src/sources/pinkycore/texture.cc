@@ -4,10 +4,12 @@
 //
 //  Created by SatoruNAKAJIMA on 2019/08/16.
 //
+#include <iostream>
+#include <stb/stb_image.h>
 
 #include "texture.h"
-
 #include "pptypes.h"
+
 using namespace PinkyPi;
 
 // ImageTexture methods
@@ -16,6 +18,7 @@ ImageTexture::ImageTexture(int w, int h):
     width(w),
     height(h),
     hasAlpha(false),
+    gamma(2.2),
     sampleType(kLinear),
     wrapX(kRepeat),
     wrapY(kRepeat)
@@ -27,9 +30,11 @@ ImageTexture::~ImageTexture() {
     delete [] image;
 }
 
-TexcelSample ImageTexture::sample(PPFloat x, PPFloat y) const {
+TexcelSample ImageTexture::sample(PPFloat x, PPFloat y, bool gammacorrect) const {
     TexcelSample ret;
     
+    x *= width;
+    y *= height;
     int ix = static_cast<int>(std::floor(x));
     int iy = static_cast<int>(std::floor(y));
     PPColorType tx = x - ix;
@@ -69,19 +74,23 @@ TexcelSample ImageTexture::sample(PPFloat x, PPFloat y) const {
         }
             break;
     }
+
+    if (gammacorrect) { ret.powRGB(gamma); }
     
     return ret;
 }
 
 void ImageTexture::fillColor(const Color rgb, PPColorType a, double gamma) {
+    this->gamma = gamma;
     for(int i = 0; i < width * height; i++) {
         image[i].rgb = rgb;
         image[i].a = a;
-        image[i].powRGB(gamma);
+        //image[i].powRGB(gamma);
     }
 }
 
 void ImageTexture::initWith8BPPImage(const unsigned char *src, int comps, double gamma) {
+    this->gamma = gamma;
     for(int i = 0; i < width * height; i++) {
         TexcelSample& texel = image[i];
         int isrc = i * comps;
@@ -89,12 +98,13 @@ void ImageTexture::initWith8BPPImage(const unsigned char *src, int comps, double
         texel.rgb.g = (comps < 2) ? texel.rgb.r : src[isrc + 1] / 255.0;
         texel.rgb.b = (comps < 3) ? texel.rgb.r : src[isrc + 2] / 255.0;
         texel.a = (comps < 4) ? 1.0 : src[isrc + 3] / 255.0;
-        texel.powRGB(gamma);
+        //texel.powRGB(gamma);
     }
     hasAlpha = (comps >= 4);
 }
 
 void ImageTexture::initWith16BPPImage(const unsigned short *src, int comps, double gamma) {
+    this->gamma = gamma;
     for(int i = 0; i < width * height; i++) {
         TexcelSample& texel = image[i];
         int isrc = i * comps;
@@ -102,12 +112,13 @@ void ImageTexture::initWith16BPPImage(const unsigned short *src, int comps, doub
         texel.rgb.g = (comps < 2) ? texel.rgb.r : src[isrc + 1] / 65535.0;
         texel.rgb.b = (comps < 3) ? texel.rgb.r : src[isrc + 2] / 65535.0;
         texel.a = (comps < 4) ? 1.0 : src[isrc + 3] / 65535.0;
-        texel.powRGB(gamma);
+        //texel.powRGB(gamma);
     }
     hasAlpha = (comps >= 4);
 }
 
 void ImageTexture::initWithFpImage(const float *src, int comps, double gamma) {
+    this->gamma = gamma;
     for(int i = 0; i < width * height; i++) {
         TexcelSample& texel = image[i];
         int isrc = i * comps;
@@ -115,7 +126,7 @@ void ImageTexture::initWithFpImage(const float *src, int comps, double gamma) {
         texel.rgb.g = (comps < 2) ? texel.rgb.r : src[isrc + 1];
         texel.rgb.b = (comps < 3) ? texel.rgb.r : src[isrc + 2];
         texel.a = (comps < 4) ? 1.0 : src[isrc + 3];
-        texel.powRGB(gamma);
+        //texel.powRGB(gamma);
     }
     hasAlpha = (comps >= 4);
 }
@@ -124,7 +135,7 @@ int ImageTexture::wrapSampleX(int x) const {
     switch (wrapX) {
         case kClamp:
             x = std::max(0, x);
-            x = std::min(x, width);
+            x = std::min(x, width - 1);
             break;
         case kRepeat:
         default:
@@ -139,7 +150,7 @@ int ImageTexture::wrapSampleY(int y) const {
     switch (wrapY) {
         case kClamp:
             y = std::max(0, y);
-            y = std::min(y, height);
+            y = std::min(y, height - 1);
             break;
         case kRepeat:
         default:
@@ -150,3 +161,18 @@ int ImageTexture::wrapSampleY(int y) const {
     return y;
 }
 
+ImageTexture* ImageTexture::loadImageFile(std::string path) {
+    int w, h, ch;
+    float* data = stbi_loadf(path.c_str(), &w, &h, &ch, 0);
+    if(data == nullptr) {
+        std::cout  << "Image file load failed: " << path << std::endl;
+        return nullptr;
+    }
+    
+    auto img = new ImageTexture(w, h);
+    img->initWithFpImage(data, ch, 1.0);
+    
+    stbi_image_free(data);
+    
+    return img;
+}
