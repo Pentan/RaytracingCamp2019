@@ -660,11 +660,11 @@ void Renderer::waitRenderUntil(FrameBuffer* fb, int frameId, double startTime, d
             
             int nextspp = static_cast<int>(prevspp * timeRemain / sequenceTime);
             if (timeRemain < sequenceTime) {
-                nextspp = nextspp / 2;
+                nextspp = nextspp * 2 / 3;
             }
             nextspp = std::max(1, std::min(nextspp, prevspp));
 
-            std::cout << "  sequenceTime:" << sequenceTime << ",timeRemain:" << timeRemain << ",timeLimit:" << timeLimit << "\n";
+            //std::cout << "  sequenceTime:" << sequenceTime << ",timeRemain:" << timeRemain << ",timeLimit:" << timeLimit << "\n";
             std::cout << "  refill render commands. spp:" << nextspp << " (" << TimeUtils::getElapsedTimeInSeconds() << ")" << std::endl;
             pushRenderCommands(fb, frameId, nextspp, pixelSubSamples);
             

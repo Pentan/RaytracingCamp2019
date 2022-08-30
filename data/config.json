@@ -1,10 +1,26 @@
 {
-    "width":320,
-    "height":180,
+    "width":1280,
+    "height":720,
 
-    "samplesPerPixel": 1,
-    "pixelSubSamples": 1,
+    "frames": 1,
+    "startFrame": 0,
+    "framesPerSecond": 30,
     
+    "exposureSecond": 0.125,
+    "exposureSlice": 4,
+
+    "samplesPerPixel": 8,
+    "pixelSubSamples": 4,
+
+    "minDepth": 1,
+    "maxDepth": 8,
+    
+    "tileSize": 256,
+
+    "limitSec": 300.0,
+    "limitMargin": 0.2,
+    "maxThreads": 0,
+
     "inputFile": "data/input.gltf",
     "outputDir": "output",
     "outputName": "output",
