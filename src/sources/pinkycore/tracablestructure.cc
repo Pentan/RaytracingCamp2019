@@ -207,7 +207,7 @@ void SkinMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTimeT
 
     PPFloat wa = 1.0 - isect.vcb - isect.vcc;
     PPFloat wb = isect.vcb;
-    PPFloat wc = isect.vcb;
+    PPFloat wc = isect.vcc;
 
     odetail->barycentricCoord.set(wa, wb, wc);
     odetail->vertexAttributes[0] = attrA;

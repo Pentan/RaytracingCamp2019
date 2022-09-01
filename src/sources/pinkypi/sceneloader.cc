@@ -998,6 +998,21 @@ namespace {
             
             Camera *cam = new Camera();
             cam->name = gltfcam.name;
+
+            // DOF parameters needs before init
+            tinygltf::Value ppextra;
+            //ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focalLength"));
+            //if (ppextra.Type() != tinygltf::NULL_TYPE) {
+            //    cam->focalLength = ppextra.Get<PPFloat>();
+            //}
+            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("fNumber"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                cam->fNumber = ppextra.Get<PPFloat>();
+            }
+            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focusDistance"));
+            if (ppextra.Type() != tinygltf::NULL_TYPE) {
+                cam->focusDistance = ppextra.Get<PPFloat>();
+            }
             
             if (gltfcam.type.compare("perspective") == 0) {
                 cam->initWithType(Camera::kPerspectiveCamera);
@@ -1018,20 +1033,6 @@ namespace {
             } else {
                 std::cerr << "Unknown type camera found. skip:" << gltfcam.type << std::endl;
                 continue;
-            }
-            
-            tinygltf::Value ppextra;
-            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focalLength"));
-            if (ppextra.Type() != tinygltf::NULL_TYPE) {
-                cam->focalLength = ppextra.Get<PPFloat>();
-            }
-            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("fNumber"));
-            if (ppextra.Type() != tinygltf::NULL_TYPE) {
-                cam->fNumber = ppextra.Get<PPFloat>();
-            }
-            ppextra = FindPinkyPiExtra(gltfcam.extras, getPinkyPiExtraKey("focusDistance"));
-            if (ppextra.Type() != tinygltf::NULL_TYPE) {
-                cam->focusDistance = ppextra.Get<PPFloat>();
             }
             
             //

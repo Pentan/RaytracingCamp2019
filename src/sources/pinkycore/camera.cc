@@ -11,7 +11,7 @@
 using namespace PinkyPi;
 
 Camera::Camera():
-    focalLength(1.0),
+    //focalLength(1.0),
     fNumber(0.0),
     focusDistance(1.0)
 {
@@ -47,11 +47,27 @@ Ray Camera::getRay(PPFloat tx, PPFloat ty, Random* rng)
 }
 
 Ray Camera::getThinLensRay(Camera* cam, PPFloat tx, PPFloat ty, Random* rng) {
-    // FIXME
-    PPFloat y = std::tan(cam->perspective.yfov * 0.5);
-    Vector3 o(0.0, 0.0, 0.0);
-    Vector3 d(tx * y * cam->perspective.aspect, ty * y, -1);
+    // forcus position
+    PPFloat h = std::tan(cam->perspective.yfov * 0.5);
+    Vector3 p(tx * h * cam->perspective.aspect, ty * h, -1);
+    p = p * cam->focusDistance;
+
+    // h = tan(fov/2) = (sensor height / 2) / focul length
+    // sensor height := 24[mm]
+    // focul length = 12 / h
+    // aperture diameter = focul length / f number
+    PPFloat apertuerR = 12.0 / (h * cam->fNumber) * 0.0005; // 0.5[diameter->radius] * 1/1000[mm->m]
+
+    // circle sample
+    PPFloat r = std::sqrt(rng->nextDoubleCC());
+    PPFloat theta = rng->nextDoubleCO() * 2.0 * kPI;
+    PPFloat sx = r * cos(theta);
+    PPFloat sy = r * sin(theta);
+
+    Vector3 o(sx * apertuerR, sy * apertuerR, 0.0);
+    Vector3 d = p - o;
     d.normalize();
+
     return Ray(o, d);
 }
 

@@ -52,9 +52,9 @@ namespace PinkyPi {
             } orthographics;
         };
 
-        PPFloat focalLength;
-        PPFloat fNumber;
-        PPFloat focusDistance;
+        // PPFloat focalLength;    // [mm]
+        PPFloat fNumber;        // [focal length / diameter of entrance pupil]
+        PPFloat focusDistance;  // [m]
     };
 }
 

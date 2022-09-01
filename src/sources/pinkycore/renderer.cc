@@ -199,7 +199,7 @@ void Renderer::render() {
     
     for(int i = 0; i < renderFrames; i++) {
         double frameStartTime = TimeUtils::getTimeInSeconds();
-        int frameNumber = i + startFrame;
+        int frameNumber = i + startFrame + 1; // from 1 to N
         renderingFrameId = frameNumber;
 
         std::cout << "<" << i+1 << "/" << renderFrames << "> frame[" << frameNumber <<  "] start ("  << TimeUtils::getElapsedTimeInSeconds() << ")" << std::endl;
@@ -208,7 +208,7 @@ void Renderer::render() {
         fb->clear();
         auto pp = postprocessors[frameBufferIndex].get();
         
-        PPTimeType t = frameNumber / static_cast<PPTimeType>(fps);
+        PPTimeType t = (frameNumber - 1) / static_cast<PPTimeType>(fps); // from 0 to N-1
         renderOneFrame(fb, pp, t, t + exposureSec, frameNumber);
         
         // wait

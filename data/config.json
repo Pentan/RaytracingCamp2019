@@ -2,22 +2,22 @@
     "width":1280,
     "height":720,
 
-    "frames": 1,
+    "frames": 30,
     "startFrame": 0,
-    "framesPerSecond": 30,
+    "framesPerSecond": 10,
     
-    "exposureSecond": 0.125,
+    "exposureSecond": 0.008,
     "exposureSlice": 4,
 
-    "samplesPerPixel": 8,
-    "pixelSubSamples": 4,
+    "samplesPerPixel": 2,
+    "pixelSubSamples": 2,
 
     "minDepth": 1,
-    "maxDepth": 8,
+    "maxDepth": 4,
     
-    "tileSize": 256,
+    "tileSize": 128,
 
-    "limitSec": 300.0,
+    "limitSec": 600.0,
     "limitMargin": 0.2,
     "maxThreads": 0,
 

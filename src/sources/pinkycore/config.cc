@@ -136,6 +136,7 @@ void Config::print() const {
     std::cout << "--- config dump ---" << "\n";
     std::cout << "frames:" << frames << ", start:" << startFrame << ", fps:" << framesPerSecond << "\n";
     std::cout << "maxThreads:" << maxThreads << "\n";
+    std::cout << "limitSec:" << limitSec << ", limitMargin:" << limitMargin << "\n";
     std::cout << "spp:" << samplesPerPixel << ", sub:" << pixelSubSamples << "\n";
     std::cout << "size:(" << width << "," << height << "), tileSize:" << tileSize << "\n";
     std::cout << "exposureSec:" << exposureSecond << ", slice:" << exposureSlice << "\n";
