@@ -113,6 +113,8 @@ namespace PinkyPi {
         struct WorkerInfo {
             CommandType commandType;
             WorkerStatus status;
+            int infoValue0;
+            int infoValue1;
         };
 
         struct TileInfo {

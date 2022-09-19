@@ -410,6 +410,8 @@ void Renderer::pathtrace(const Ray& iray, const Scene* scn, Context* cntx, Rende
 void Renderer::renderJob(int workerid, JobCommand cmd) {
     // expired
     if (cmd.render.frameId != renderingFrameId) { return; }
+    
+    auto* workerinfo = &workerInfos[workerid];
 
     Context *cntx = &renderContexts[workerid];
     Random& rng = cntx->random;
@@ -433,12 +435,16 @@ void Renderer::renderJob(int workerid, JobCommand cmd) {
         subPixelIndex[i] = i;
     }
     
+    workerinfo->infoValue0 = tileIndex;
+    
     for(int iy = tile.starty; iy < tile.endy; iy++) {
         for(int ix = tile.startx; ix < tile.endx; ix++) {
             PPFloat px = PPFloat(ix);
             PPFloat py = PPFloat(iy);
             int pixelId = tile.getPixelIndex(ix, iy);
             FrameBuffer::Pixel& pixel = cntx->framebuffer->getPixel(pixelId);
+            
+            workerinfo->infoValue1 = pixelId;
             
             for(int ips = 0; ips < spp; ips++) {
                 if (cmd.render.frameId != renderingFrameId) { return; }
@@ -516,6 +522,8 @@ void Renderer::wokerMain(int workerid) {
     auto changeInfoState = [this](WorkerInfo* info, WorkerStatus s) {
         // std::unique_lock<std::mutex> lock(workerInfoMutex);
         info->status = s;
+        info->infoValue0 = 0;
+        info->infoValue1 = 0;
     };
 
     while(true) {
@@ -689,6 +697,7 @@ double Renderer::checkPrintProcessLog(double logedTime) {
         for (auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
             auto info = *ite;
             ss << " " << stattbl[info.status] << cmdtbl[info.commandType];
+            ss << ":" << info.infoValue0 << "," << info.infoValue1;
         }
         std::cout << ss.str() << std::endl;
 
