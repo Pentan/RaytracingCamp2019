@@ -117,20 +117,22 @@ PPFloat BVH::traverseIntersect(const TreeNode* node, const Ray& ray, PPFloat tne
         return hitfunc(ray, tnear, tfar, node->source);
     }
     else {
-        PPFloat t;
+//        PPFloat t;
         PPFloat rett = -1.0;
-        if (node->leftNode->bounds.isIntersect(ray, tnear, tfar)) {
-            t = traverseIntersect(node->leftNode, ray, tnear, tfar, hitfunc);
-            if (t > tnear && t < tfar) {
+        PPFloat tl = node->leftNode->bounds.mightIntersectContent(ray, tfar);
+        PPFloat tr = node->rightNode->bounds.mightIntersectContent(ray, tfar);
+        
+        if (tl >= 0.0) {
+            PPFloat t = traverseIntersect(node->leftNode, ray, tnear, tfar, hitfunc);
+            if (t >= tnear && t <= tfar) {
                 tfar = t;
                 rett = t;
             }
         }
-
-        t = node->rightNode->bounds.intersectDistance(ray);
-        if (t > tnear && t < tfar) {
-            t = traverseIntersect(node->rightNode, ray, tnear, tfar, hitfunc);
-            if (t > tnear && t < tfar) {
+        
+        if (tr >= 0.0) {
+            PPFloat t = traverseIntersect(node->rightNode, ray, tnear, tfar, hitfunc);
+            if (t >= tnear && t <= tfar) {
                 rett = (rett < 0.0) ? t : std::min(rett, t);
             }
         }

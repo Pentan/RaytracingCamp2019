@@ -201,8 +201,9 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
         PPFloat vb, vc;
     } hitInfo;
 
+    memset(&hitInfo, 0, sizeof(hitInfo));
     hitInfo.mint = -1.0;
-    mint = triangleBVH->intersect(ray, nearhit, farhit, [this, &hitInfo](const Ray& ray, PPFloat neart, PPFloat fart, const AABB* tribnd) {
+    PPFloat mintb = triangleBVH->intersect(ray, nearhit, farhit, [this, &hitInfo](const Ray& ray, PPFloat neart, PPFloat fart, const AABB* tribnd) {
         const int clsId = tribnd->dataId;
         const int triId = tribnd->subDataId;
         const Triangle& tri = clusters[clsId]->triangles[triId];
@@ -220,7 +221,14 @@ PPFloat Mesh::intersection(const Ray& ray, PPFloat nearhit, PPFloat farhit, Mesh
         }
         return t;
     });
+    
+//    if(mint != mintb) {
+//        printf("miss hit (%lf,<%d,%d>):(%lf,<%d,%d>)!!!!!\n",
+//               mint, clusterId, triId,
+//               hitInfo.mint, hitInfo.clusterId, hitInfo.triId);
+//    }
 
+    mint = hitInfo.mint;
     clusterId = hitInfo.clusterId;
     triId = hitInfo.triId;
     vcb = hitInfo.vb;

@@ -74,12 +74,35 @@ bool AABB::isInside(const Vector3 &p) const {
 
 bool AABB::isIntersect(const Ray &ray, PPFloat tnear, PPFloat tfar) const {
     PPFloat t = intersectDistance(ray);
-    return (tnear < t) && (t < tfar);
+    return (tnear <= t) && (t <= tfar);
+}
+
+PPFloat AABB::mightIntersectContent(const Ray &ray, PPFloat tfar) const {
+    PPFloat tmin, tmax;
+    bool ishit = testIntersect(ray, &tmin, &tmax);
+    // miss
+    if(!ishit) return -1.0;
+    
+    // returns nearest distance
+    // from inside
+    if(tmin <= 0.0) return 0.0;
+    // from outside
+    return (tmin <= tfar) ? tmin : -1.0;
 }
 
 PPFloat AABB::intersectDistance(const Ray &ray) const {
+    PPFloat tmin, tmax;
+    bool ishit = testIntersect(ray, &tmin, &tmax);
+    if(!ishit) {
+        return -1.0;
+    }
+    return (tmin < 0.0) ? tmax : tmin;
+}
+
+bool AABB::testIntersect(const Ray &ray, PPFloat* otmin, PPFloat* otmax) const {
 	PPFloat largest_min = -std::numeric_limits<PPFloat>::max();
     PPFloat smallest_max = std::numeric_limits<PPFloat>::max();
+    bool ishit = true;
 	
 	for(int i = 0; i < 3; i++) {
 		PPFloat vdiv = 1.0 / ray.direction.v[i];
@@ -93,11 +116,14 @@ PPFloat AABB::intersectDistance(const Ray &ray) const {
         smallest_max = std::min(smallest_max, tmpmax);
         
 		if(smallest_max < largest_min) {
-            return -std::numeric_limits<PPFloat>::max();
+            ishit = false;
+            break;
 		}
 	}
-	
-	return (largest_min > 0.0) ? largest_min : smallest_max;
+    
+    if(otmin != nullptr) { *otmin = largest_min; }
+    if(otmax != nullptr) { *otmax = smallest_max; }
+    return ishit;
 }
 
 AABB AABB::transformed(const AABB& a, const Matrix4& m) {
