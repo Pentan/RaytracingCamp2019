@@ -15,7 +15,7 @@ using namespace PinkyPi;
 
 TEST_CASE("KayframeSampler uniform key v3 Test [Animation]") {
     KeyframeSampler ks;
-    ks.interpolation = KeyframeSampler::kLinear;
+    ks.interpolation = KeyframeSampler::InterpolationType::kLinear;
     ks.sampleComponents = 3;
     
     ks.timeStamps.push_back(0.0);
@@ -92,7 +92,7 @@ TEST_CASE("KayframeSampler uniform key v3 Test [Animation]") {
 
 TEST_CASE("KayframeSampler v4 Test [Animation]") {
     KeyframeSampler ks;
-    ks.interpolation = KeyframeSampler::kLinear;
+    ks.interpolation = KeyframeSampler::InterpolationType::kLinear;
     ks.sampleComponents = 4;
     
     ks.timeStamps.push_back(0.0);
@@ -182,7 +182,7 @@ TEST_CASE("KayframeSampler quaternion Test [Animation]") {
     Quaterion tmpq;
     
     KeyframeSampler ks;
-    ks.interpolation = KeyframeSampler::kLinear;
+    ks.interpolation = KeyframeSampler::InterpolationType::kLinear;
     ks.sampleComponents = 4;
     
     ks.timeStamps.push_back(0.0);

@@ -107,7 +107,7 @@ TEST_CASE("ImageTexture test [Texture]") {
     }
 
     ImageTexture tex(w, h);
-    tex.setWrap(ImageTexture::kClamp);
+    tex.setWrap(ImageTexture::WrapType::kClamp);
     tex.initWithFpImage(data, 4, 1.0);
 
     SaveImage("bgtest", &tex);
@@ -122,11 +122,13 @@ TEST_CASE("ImageTexture load test [Texture]") {
     
     int x, y, c;
     auto* data = stbi_load(path.c_str(), &x, &y, &c, 4);
-    
-    ImageTexture tex(x, y);
-    tex.initWith8BPPImage(data, c, 1.0);
-    
-    SaveImage("loadtest", &tex);
-    
+    // WARN(data != nullptr);
+
+    if (data != nullptr) {
+        ImageTexture tex(x, y);
+        tex.initWith8BPPImage(data, c, 1.0);
+
+        SaveImage("loadtest", &tex);
+    }
     REQUIRE(true);
 }

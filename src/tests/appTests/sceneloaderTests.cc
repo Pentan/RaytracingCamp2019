@@ -52,3 +52,12 @@ TEST_CASE("Animated model test 01 [SceneLoader]") {
     REQUIRE(scene != nullptr);
 }
 
+TEST_CASE("Blender 3.6 exported model test 01 [SceneLoader]") {
+    std::stringstream ss;
+    ss << PINKYPI_TEST_DATA_DIR << "/gltf/blender3601.gltf";
+    std::string gltfpath = ss.str();
+    AssetLibrary* assetlib = SceneLoader::load(gltfpath);
+    Scene* scene = assetlib->getDefaultScene();
+    REQUIRE(scene != nullptr);
+}
+
