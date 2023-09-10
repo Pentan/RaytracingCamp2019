@@ -1,0 +1,28 @@
+{
+    "width":1280,
+    "height":720,
+
+    "frames": 25,
+    "startFrame": 0,
+    "framesPerSecond": 15,
+    
+    "exposureSecond": 0.005,
+    "exposureSlice": 4,
+
+    "samplesPerPixel": 1,
+    "pixelSubSamples": 1,
+
+    "minDepth": 1,
+    "maxDepth": 4,
+    
+    "tileSize": 128,
+
+    "limitSec": 300.0,
+    "limitMargin": 0.2,
+    "maxThreads": 0,
+
+    "inputFile": "data/scene.gltf",
+    "outputDir": "",
+    "outputName": "",
+    "outputExt": "png"
+}
