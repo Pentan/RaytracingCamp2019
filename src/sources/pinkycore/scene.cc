@@ -57,7 +57,7 @@ void Scene::preprocessTraverse(Node *node, Matrix4 gm, Config* config) {
     containsNodes.push_back(node);
     
     switch (node->contentType) {
-        case Node::kContentTypeMesh:
+        case Node::ContentType::kContentTypeMesh:
             node->content.mesh->preprocess();
             if(node->tracable != nullptr) {
                 std::cerr << "WARNING node " << node->name << " already has tracable." << std::endl;
@@ -74,10 +74,10 @@ void Scene::preprocessTraverse(Node *node, Matrix4 gm, Config* config) {
             }
             tracables.push_back(node);
             break;
-        case Node::kContentTypeCamera:
+        case Node::ContentType::kContentTypeCamera:
             cameras.push_back(node);
             break;
-        case Node::kContentTypeLight:
+        case Node::ContentType::kContentTypeLight:
             lights.push_back(node);
             break;
         default:
@@ -87,8 +87,9 @@ void Scene::preprocessTraverse(Node *node, Matrix4 gm, Config* config) {
     for(auto i = node->children.begin(); i != node->children.end(); i++) {
         auto* child = assetLib->nodes.at(*i).get();
         child->parent = node;
-        if (node->animatedFlag != 0) {
-            child->animatedFlag |= Node::kAnimatedInTree;
+        if (node->animatedFlag != Node::AnimatedFlags::kAnimatedNone) {
+            int flag = static_cast<int>(node->animatedFlag) | static_cast<int>(Node::AnimatedFlags::kAnimatedInTree);
+            child->animatedFlag = static_cast<Node::AnimatedFlags>(flag);
         }
         preprocessTraverse(child, m, config);
     }

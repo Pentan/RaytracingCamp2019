@@ -7,7 +7,7 @@ namespace PinkyPi {
     
     class RenderScheduler {
     public:
-        enum RenderState {
+        enum class RenderState {
             kNone,
             kStarted,
             kRendering,

@@ -33,6 +33,7 @@ namespace PinkyPi {
         double fps;
         double exposureSec;
         int exposureSlice;
+        int saveZeroWidth;
         std::string saveNameBase;
         std::string saveExt;
         
@@ -72,7 +73,7 @@ namespace PinkyPi {
             void clear();
         };
         
-        enum CommandType {
+        enum class CommandType {
             kNoop,
             kRender,
             kPostprocess,
@@ -101,7 +102,7 @@ namespace PinkyPi {
             };
         };
         
-        enum WorkerStatus {
+        enum class WorkerStatus {
             kStart,
             kWaiting,
             kProcessing,

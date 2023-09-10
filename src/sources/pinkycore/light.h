@@ -12,7 +12,7 @@ namespace PinkyPi {
 
     class Light {
     public:
-        enum LightType {
+        enum class LightType {
             kPointLight,
             kSpotLight,
             kDirectionalLight,
@@ -45,6 +45,8 @@ namespace PinkyPi {
                 outerConeAngle(outer)
             {}
         } spot;
+
+        PPFloat sampleWeight;
     };
 }
 

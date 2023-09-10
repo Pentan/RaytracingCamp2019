@@ -21,7 +21,7 @@
     "limitMargin": 0.2,
     "maxThreads": 0,
 
-    "inputFile": "data/input.gltf",
+    "inputFile": "data/anago.gltf",
     "outputDir": "output",
     "outputName": "output",
     "outputExt": "png"

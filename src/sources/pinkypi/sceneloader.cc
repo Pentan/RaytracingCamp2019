@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cstdio>
 #include <vector>
 #include <memory>
@@ -320,13 +321,13 @@ namespace {
                 
                 switch (gltfsampler.magFilter) {
                     case TINYGLTF_TEXTURE_FILTER_NEAREST:
-                        imgtex->sampleType = ImageTexture::kNearest;
+                        imgtex->sampleType = ImageTexture::SampleType::kNearest;
                         break;
                     case TINYGLTF_TEXTURE_FILTER_LINEAR:
-                        imgtex->sampleType = ImageTexture::kLinear;
+                        imgtex->sampleType = ImageTexture::SampleType::kLinear;
                         break;
                     default:
-                        imgtex->sampleType = ImageTexture::kLinear;
+                        imgtex->sampleType = ImageTexture::SampleType::kLinear;
                         break;
                 }
                 
@@ -335,10 +336,10 @@ namespace {
                 // Wrap x
                 switch (gltfsampler.wrapS) {
                     case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-                        imgtex->wrapX = ImageTexture::kClamp;
+                        imgtex->wrapX = ImageTexture::WrapType::kClamp;
                         break;
                     case TINYGLTF_TEXTURE_WRAP_REPEAT:
-                        imgtex->wrapX = ImageTexture::kRepeat;
+                        imgtex->wrapX = ImageTexture::WrapType::kRepeat;
                         break;
                     default:
                         std::cerr << "texture:" << gltftex.name;
@@ -347,17 +348,17 @@ namespace {
                         std::cerr << ". now using clamp.";
                         std::cerr << std::endl;
                         
-                        imgtex->wrapX = ImageTexture::kClamp;
+                        imgtex->wrapX = ImageTexture::WrapType::kClamp;
                         break;
                 }
                 
                 // Wrap y
                 switch (gltfsampler.wrapT) {
                     case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-                        imgtex->wrapY = ImageTexture::kClamp;
+                        imgtex->wrapY = ImageTexture::WrapType::kClamp;
                         break;
                     case TINYGLTF_TEXTURE_WRAP_REPEAT:
-                        imgtex->wrapY = ImageTexture::kRepeat;
+                        imgtex->wrapY = ImageTexture::WrapType::kRepeat;
                         break;
                     default:
                         std::cerr << "texture:" << gltftex.name;
@@ -366,7 +367,7 @@ namespace {
                         std::cerr << ". now using clamp.";
                         std::cerr << std::endl;
                         
-                        imgtex->wrapY = ImageTexture::kClamp;
+                        imgtex->wrapY = ImageTexture::WrapType::kClamp;
                         break;
                 }
             }
@@ -448,14 +449,14 @@ namespace {
                 } else if(key.compare("alphaMode") == 0) {
                     const auto& amode = val.string_value;
                     if(amode.compare("OPAQUE") == 0) {
-                        mat->alphaMode = Material::kAlphaAsOpaque;
+                        mat->alphaMode = Material::AlphaMode::kAlphaAsOpaque;
                     } else if(amode.compare("MASK") == 0) {
-                        mat->alphaMode = Material::kAlphaAsMask;
+                        mat->alphaMode = Material::AlphaMode::kAlphaAsMask;
                     } else if(amode.compare("BLEND") == 0) {
-                        mat->alphaMode = Material::kAlphaAsBlend;
+                        mat->alphaMode = Material::AlphaMode::kAlphaAsBlend;
                     } else {
                         std::cerr << "Unknown alphaMode:" << amode << std::endl;
-                        mat->alphaMode = Material::kAlphaAsBlend;
+                        mat->alphaMode = Material::AlphaMode::kAlphaAsBlend;
                     }
                     
                 } else if(key.compare("alphaCutoff") == 0) {
@@ -465,12 +466,89 @@ namespace {
                     mat->doubleSided = val.bool_value;
                 }
             }
+
+            // extension
+            if (gltfmat.extensions.size() > 0) {
+                // ior
+                auto ext_ite = gltfmat.extensions.find("KHR_materials_ior");
+                if (ext_ite != gltfmat.extensions.end()) {
+                    auto& khr_ior = ext_ite->second;
+                    if (khr_ior.Has("ior")) {
+                        mat->ior = khr_ior.Get("ior").Get<PPFloat>();
+                    }
+                }
+                // transmission
+                ext_ite = gltfmat.extensions.find("KHR_materials_transmission");
+                if (ext_ite != gltfmat.extensions.end()) {
+                    auto& khr_transmission = ext_ite->second;
+                    if (khr_transmission.Has("transmissionFactor")) {
+                        mat->transmissionFactor = khr_transmission.Get("transmissionFactor").Get<PPFloat>();
+                    }
+                    if (khr_transmission.Has("transmissionTexture")) {
+                        auto& texinfo = khr_transmission.Get("transmissionTexture");
+                        if (texinfo.Has("index")) {
+                            mat->transmissionTexture.texture = assetlib->textures[texinfo.Get("index").GetNumberAsInt()].get();
+                        }
+                        if (texinfo.Has("texCoord")) {
+                            mat->transmissionTexture.texCoord = texinfo.Get("texCoord").GetNumberAsInt();
+                        }
+                    }
+                }
+                // specular
+                ext_ite = gltfmat.extensions.find("KHR_materials_specular");
+                if (ext_ite != gltfmat.extensions.end()) {
+                    auto& khr_specular = ext_ite->second;
+                    if (khr_specular.Has("specularFactor")) {
+                        mat->specularFactor = khr_specular.Get("specularFactor").Get<PPFloat>();
+                    }
+                    if (khr_specular.Has("specularTexture")) {
+                        auto& texinfo = khr_specular.Get("specularTexture");
+                        if (texinfo.Has("index")) {
+                            mat->specularTexture.texture = assetlib->textures[texinfo.Get("index").GetNumberAsInt()].get();
+                        }
+                        if (texinfo.Has("texCoord")) {
+                            mat->specularTexture.texCoord = texinfo.Get("texCoord").GetNumberAsInt();
+                        }
+                    }
+                    if (khr_specular.Has("specularColorFactor")) {
+                        auto& col = khr_specular.Get("specularColorFactor");
+                        if (col.IsArray()) {
+                            auto& r = col.Get(0);
+                            auto& g = col.Get(1);
+                            auto& b = col.Get(2);
+                            mat->specularColorFactor.set(
+                                r.IsInt() ? r.Get<int>() : r.Get<double>(),
+                                g.IsInt() ? g.Get<int>() : g.Get<double>(),
+                                b.IsInt() ? b.Get<int>() : b.Get<double>()
+                            );
+                        }
+                    }
+                    if (khr_specular.Has("specularColorTexture")) {
+                        auto& texinfo = khr_specular.Get("specularColorTexture");
+                        if (texinfo.Has("index")) {
+                            mat->specularColorTexture.texture = assetlib->textures[texinfo.Get("index").GetNumberAsInt()].get();
+                        }
+                        if (texinfo.Has("texCoord")) {
+                            mat->specularColorTexture.texCoord = texinfo.Get("texCoord").GetNumberAsInt();
+                        }
+                    }
+                }
+                // emissive_strength
+                ext_ite = gltfmat.extensions.find("KHR_materials_emissive_strength");
+                if (ext_ite != gltfmat.extensions.end()) {
+                    auto& khr_emit_str = ext_ite->second;
+                    if (khr_emit_str.Has("emissiveStrength")) {
+                        mat->emissiveStrength = khr_emit_str.Get("emissiveStrength").Get<PPFloat>();
+                    }
+                }
+            }
             
             // extra
-            auto ppextra = FindPinkyPiExtra(gltfmat.extras, getPinkyPiExtraKey("ior"));
-            if (ppextra.Type() != tinygltf::NULL_TYPE) {
-                mat->ior = ppextra.Get<PPFloat>();
-            }
+            // Blender exports KHR_materials_ior now!
+            //auto ppextra = FindPinkyPiExtra(gltfmat.extras, getPinkyPiExtraKey("ior"));
+            //if (ppextra.Type() != tinygltf::NULL_TYPE) {
+            //    mat->ior = ppextra.Get<PPFloat>();
+            //}
             
             // Add
             mat->assetId = count;
@@ -828,11 +906,11 @@ namespace {
                 
                 if(gltfsampler.interpolation.size() > 0) {
                     if(gltfsampler.interpolation.compare("STEP") == 0) {
-                        kfsampler->interpolation = KeyframeSampler::kStep;
+                        kfsampler->interpolation = KeyframeSampler::InterpolationType::kStep;
                     } else if(gltfsampler.interpolation.compare("CUBICSPLINE") == 0) {
-                        kfsampler->interpolation = KeyframeSampler::kCubicSpline;
+                        kfsampler->interpolation = KeyframeSampler::InterpolationType::kCubicSpline;
                     } else {
-                        kfsampler->interpolation = KeyframeSampler::kLinear;
+                        kfsampler->interpolation = KeyframeSampler::InterpolationType::kLinear;
                     }
                 }
                 
@@ -851,16 +929,16 @@ namespace {
                 targetch.node = assetLib->nodes[gltfch.target_node].get();
                 const auto& chpath = gltfch.target_path;
                 if(chpath.compare("translation") == 0) {
-                    targetch.targetProp = Animation::kTranslation;
+                    targetch.targetProp = Animation::TargetProperty::kTranslation;
                 } else if(chpath.compare("rotation") == 0) {
-                    targetch.targetProp = Animation::kRotation;
+                    targetch.targetProp = Animation::TargetProperty::kRotation;
                 } else if(chpath.compare("scale") == 0) {
-                    targetch.targetProp = Animation::kScale;
+                    targetch.targetProp = Animation::TargetProperty::kScale;
                 } else if(chpath.compare("weights") == 0) {
-                    targetch.targetProp = Animation::kMorphWeights;
+                    targetch.targetProp = Animation::TargetProperty::kMorphWeights;
                 }
 
-                targetch.node->animatedFlag = Node::kAnimatedDirect;
+                targetch.node->animatedFlag = Node::AnimatedFlags::kAnimatedDirect;
             }
             
             assetLib->animations.push_back(std::shared_ptr<Animation>(anim));
@@ -919,6 +997,7 @@ namespace {
         }
         assetlib->lights.reserve(lights.ArrayLen());
         
+        PPFloat totalWeight = 0.0;
         for(int ilit = 0; ilit < lights.ArrayLen(); ilit++) {
             auto& lit_punc = lights.Get(ilit);
             if(!lit_punc.IsObject()) {
@@ -953,13 +1032,13 @@ namespace {
             if(lit_punc.Has("type")) {
                 std::string littype = lit_punc.Get("type").Get<std::string>();
                 if(littype.compare("point") == 0) {
-                    lit->lightType = Light::kPointLight;
+                    lit->lightType = Light::LightType::kPointLight;
                     
                 } else if(littype.compare("directional") == 0) {
-                    lit->lightType = Light::kPointLight;
+                    lit->lightType = Light::LightType::kDirectionalLight;
                     
                 } else if(littype.compare("sopt") == 0) {
-                    lit->lightType = Light::kSpotLight;
+                    lit->lightType = Light::LightType::kSpotLight;
                     
                 } else {
                     std::cerr << "unknown light type:" << littype << std::endl;
@@ -979,10 +1058,19 @@ namespace {
                     }
                 }
             }
+
+            totalWeight += lit->color.getMaxComponent() * lit->intensity;
+            lit->sampleWeight = totalWeight;
             //
             assetlib->lights.push_back(std::shared_ptr<Light>(lit));
             count += 1;
         }
+
+        for (int i = 0; i < count; i++) {
+            auto lit = assetlib->lights[i].get();
+            lit->sampleWeight /= totalWeight;
+        }
+
         return count;
     }
     
@@ -1015,7 +1103,7 @@ namespace {
             }
             
             if (gltfcam.type.compare("perspective") == 0) {
-                cam->initWithType(Camera::kPerspectiveCamera);
+                cam->initWithType(Camera::CameraType::kPerspectiveCamera);
                 auto& gltfpers = gltfcam.perspective;
                 cam->perspective.aspect = gltfpers.aspectRatio;
                 cam->perspective.yfov = gltfpers.yfov;
@@ -1023,7 +1111,7 @@ namespace {
                 cam->perspective.znear = gltfpers.znear;
                 
             } else if (gltfcam.type.compare("orthographic") == 0) {
-                cam->initWithType(Camera::kOrthographicsCamera);
+                cam->initWithType(Camera::CameraType::kOrthographicsCamera);
                 auto& gltfortho = cam->orthographics;
                 cam->orthographics.xmag = gltfortho.xmag;
                 cam->orthographics.ymag = gltfortho.ymag;
@@ -1103,11 +1191,11 @@ namespace {
             
             // node content
             if(gltfnode.camera >= 0) {
-                node->contentType = Node::kContentTypeCamera;
+                node->contentType = Node::ContentType::kContentTypeCamera;
                 node->content.camera = assetlib->cameras[gltfnode.camera].get();
                 
             } else if(gltfnode.mesh >= 0) {
-                node->contentType = Node::kContentTypeMesh;
+                node->contentType = Node::ContentType::kContentTypeMesh;
                 node->content.mesh = assetlib->meshes[gltfnode.mesh].get();
                 node->content.skin = nullptr;
                 // skin is not parsed here.
@@ -1134,7 +1222,7 @@ namespace {
                     auto& litid = lit_punk.Get("light");
                     if(litid.IsInt()) {
                         node->content.light = assetlib->lights[litid.Get<int>()].get();
-                        node->contentType = Node::kContentTypeLight;
+                        node->contentType = Node::ContentType::kContentTypeLight;
                     }
                 }
             }
@@ -1210,7 +1298,8 @@ namespace {
                     float tx = static_cast<float>(ix) / w;
                     float* pxl = data + (ix + iy * w) * 4;
 
-                    Vector3 c;
+                    Vector3 c(0.05);
+#if 0
                     bool checker = (fract(tx * 36.0f) > 0.5f) ^ (fract(ty * 18.0f) > 0.5f);
                     c = (checker ? 0.5 : 1.0) * azimcolTbl[static_cast<int>(tx * 8.0f)];
                     //c = azimcolTbl[static_cast<int>(tx * 8.0f)];
@@ -1236,7 +1325,9 @@ namespace {
                     if (((ix + 1) % (w / 2)) < 2 || (((iy + 1) % (h / 2)) < 2)) {
                         c.set(0.2, 0.02, 0.02);
                     }
+#else
 
+#endif
                     pxl[0] = static_cast<float>(c.x);
                     pxl[1] = static_cast<float>(c.y);
                     pxl[2] = static_cast<float>(c.z);

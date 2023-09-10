@@ -12,7 +12,7 @@ namespace PinkyPi {
 
     class Animation {
         public:
-        enum TargetProperty {
+        enum class TargetProperty {
             kTranslation,
             kRotation,
             kScale,

@@ -12,6 +12,7 @@ namespace PinkyPi {
     const PPFloat kINF = 1e128;
     const PPFloat kEPS = 1e-8;
     const PPFloat kRayOffset = 1e-4;
+    const PPFloat kDirLightOffset = 1e4;
     const PPFloat kFarAway = 1e16;
     #define kSmallOffset    kEPS
 

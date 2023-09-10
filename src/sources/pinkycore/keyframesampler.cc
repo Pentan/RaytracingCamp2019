@@ -53,17 +53,17 @@ KeyframeSampler::KeyWeights KeyframeSampler::calclateKeyWeights(PPTimeType time)
     }
     
     switch (interpolation) {
-        case kStep:
+        case InterpolationType::kStep:
             ret.keyindex[0] = nearestIndex;
             ret.keyindex[1] = nearestIndex;
             ret.weights[0] = 1.0;
             ret.weights[1] = 0.0;
             break;
-        case kCubicSpline:
+        case InterpolationType::kCubicSpline:
             // FIXME
             // break; // fallback to LINEAR
         default:
-        case kLinear:
+        case InterpolationType::kLinear:
         {
             ret.keyindex[0] = nearestIndex;
             ret.keyindex[1] = std::min(nearestIndex + 1, keyLastIndex);
@@ -91,16 +91,16 @@ void KeyframeSampler::sample(PPTimeType time, std::vector<PPFloat>& outbuf) {
     outbuf.resize(sampleComponents);
     for (size_t i = 0; i < sampleComponents; i++) {
         switch (interpolation) {
-        case kStep:
-            outbuf[i] = data0[i];
-            break;
-        case kCubicSpline:
-            // FIXME
-            // break; // fallback to LINEAR
-        default:
-        case kLinear:
-            outbuf[i] = data0[0] * kw.weights[0] + data1[0] * kw.weights[1];
-            break;
+            case InterpolationType::kStep:
+                outbuf[i] = data0[i];
+                break;
+            case InterpolationType::kCubicSpline:
+                // FIXME
+                // break; // fallback to LINEAR
+            default:
+            case InterpolationType::kLinear:
+                outbuf[i] = data0[0] * kw.weights[0] + data1[0] * kw.weights[1];
+                break;
         }
     }
 }
@@ -112,14 +112,14 @@ Vector3 KeyframeSampler::sampleVector3(PPTimeType time) {
     
     Vector3 retv;
     switch (interpolation) {
-        case kStep:
+        case InterpolationType::kStep:
             retv.set(data0[0], data0[1], data0[2]);
             break;
-        case kCubicSpline:
+        case InterpolationType::kCubicSpline:
             // FIXME
             // break; // fallback to LINEAR
         default:
-        case kLinear:
+        case InterpolationType::kLinear:
             retv.set(
                 data0[0] * kw.weights[0] + data1[0] * kw.weights[1],
                 data0[1] * kw.weights[0] + data1[1] * kw.weights[1],
@@ -136,14 +136,14 @@ Vector4 KeyframeSampler::sampleVector4(PPTimeType time) {
     
     Vector4 retv;
     switch (interpolation) {
-        case kStep:
+        case InterpolationType::kStep:
             retv.set(data0[0], data0[1], data0[2], data0[3]);
             break;
-        case kCubicSpline:
+        case InterpolationType::kCubicSpline:
             // FIXME
             // break; // fallback to LINEAR
         default:
-        case kLinear:
+        case InterpolationType::kLinear:
             retv.set(
                 data0[0] * kw.weights[0] + data1[0] * kw.weights[1],
                 data0[1] * kw.weights[0] + data1[1] * kw.weights[1],
@@ -161,14 +161,14 @@ Quaterion KeyframeSampler::sampleQuaternion(PPTimeType time) {
     
     Quaterion retq;
     switch (interpolation) {
-        case kStep:
+        case InterpolationType::kStep:
             retq.set(data0[0], data0[1], data0[2], data0[3]);
             break;
-        case kCubicSpline:
+        case InterpolationType::kCubicSpline:
             // FIXME
             // break; // fallback to LINEAR
         default:
-        case kLinear:
+        case InterpolationType::kLinear:
         {
             Quaterion q0(data0[0], data0[1], data0[2], data0[3]);
             Quaterion q1(data1[0], data1[1], data1[2], data1[3]);

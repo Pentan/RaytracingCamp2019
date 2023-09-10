@@ -12,7 +12,7 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hellooooo Pinky Pi!\n" << std::endl;
+    std::cout << "Hellooo again Pinky Pi 1.1!\n" << std::endl;
     
     std::string configPath = "data/config.json";
     PinkyPi::Config config;

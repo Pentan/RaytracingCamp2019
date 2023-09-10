@@ -21,7 +21,7 @@ namespace PinkyPi {
     /////
     class Mesh {
     public:
-        enum AttributeId {
+        enum class AttributeId {
             kNormal,
             kTangent,
             kUv,
@@ -67,8 +67,8 @@ namespace PinkyPi {
             PPFloat area;
             AABB bounds;
 
-            size_t attributeCounts[kNumAttrs];
-            size_t attributeOffsets[kNumAttrs];
+            size_t attributeCounts[static_cast<int>(AttributeId::kNumAttrs)];
+            size_t attributeOffsets[static_cast<int>(AttributeId::kNumAttrs)];
             size_t attributeDataSize;
         };
         

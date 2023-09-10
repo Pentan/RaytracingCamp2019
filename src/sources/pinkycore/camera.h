@@ -12,7 +12,7 @@ namespace PinkyPi {
     
     class Camera {
     public:
-        enum CameraType {
+        enum class CameraType {
             kPerspectiveCamera,
             kOrthographicsCamera
         };

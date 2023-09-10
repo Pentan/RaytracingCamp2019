@@ -40,6 +40,7 @@ namespace PinkyPi {
         std::string outputDir;
         std::string outputName;
         std::string outputExt;
+        int outputZeroWidth;
 
     public:
         Config() :
@@ -65,9 +66,10 @@ namespace PinkyPi {
             quietProgress(false),
             waitUntilFinish(true),
             inputFile(""),
-            outputDir("output"),
-            outputName("output"),
-            outputExt("png")
+            outputDir(""),
+            outputName(""),
+            outputExt("png"),
+            outputZeroWidth(3)
         {
         }
         

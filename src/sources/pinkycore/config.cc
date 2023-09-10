@@ -63,6 +63,7 @@ bool Config::load(const std::string& path) {
     outputDir = GetConfigValue<std::string>(jsonRoot, "outputDir", outputDir);
     outputName = GetConfigValue<std::string>(jsonRoot, "outputName", outputName);
     outputExt = GetConfigValue<std::string>(jsonRoot, "outputExt", outputExt);
+    outputZeroWidth = GetConfigValue<int>(jsonRoot, "outputZeroWidth", outputZeroWidth);
     
     return true;
 }

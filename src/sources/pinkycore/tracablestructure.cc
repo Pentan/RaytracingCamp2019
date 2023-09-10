@@ -17,7 +17,7 @@ using namespace PinkyPi;
 
 // StaticMeshStructure
 void StaticMeshStructure::initialize(int maxslice) {
-    if (ownerNode->animatedFlag == 0) {
+    if (ownerNode->animatedFlag == Node::AnimatedFlags::kAnimatedNone) {
         const auto& gm = ownerNode->initialTransform.globalMatrix;
         invGlobalMatrix = Matrix4::inverted(gm, nullptr);
         
@@ -34,14 +34,14 @@ void StaticMeshStructure::initialize(int maxslice) {
 }
 
 void StaticMeshStructure::clearSlice() {
-    if (ownerNode->animatedFlag != 0) {
+    if (ownerNode->animatedFlag != Node::AnimatedFlags::kAnimatedNone) {
         globalBounds.clear();
     }
 }
 
 void StaticMeshStructure::updateSlice(int sliceId) {
     // update AABB
-    if (ownerNode->animatedFlag != 0) {
+    if (ownerNode->animatedFlag != Node::AnimatedFlags::kAnimatedNone) {
         const auto& gm = ownerNode->currentTransform.globalMatrix;
         globalBounds.expand(AABB::transformed(mesh->bounds, gm));
     }
@@ -59,7 +59,7 @@ PPFloat StaticMeshStructure::intersection(const Ray& ray, PPFloat nearhit, PPFlo
         return -1.0;
     }
 
-    if (ownerNode->animatedFlag == 0) {
+    if (ownerNode->animatedFlag == Node::AnimatedFlags::kAnimatedNone) {
         igm = invGlobalMatrix;
         gm = ownerNode->initialTransform.globalMatrix;
     } else {
@@ -89,7 +89,7 @@ void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTim
     Matrix4 igm;
     Matrix4 itgm;
 
-    if (ownerNode->animatedFlag == 0) {
+    if (ownerNode->animatedFlag == Node::AnimatedFlags::kAnimatedNone) {
         gm = ownerNode->initialTransform.globalMatrix;
         igm = invGlobalMatrix;
     } else {
@@ -129,8 +129,8 @@ void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTim
     odetail->shadingTangent.y = tmptan.y;
     odetail->shadingTangent.z = tmptan.z;
 
-    odetail->uvCount = cls->attributeCount(Mesh::kUv);
-    odetail->colorCount = cls->attributeCount(Mesh::kColor);
+    odetail->uvCount = cls->attributeCount(Mesh::AttributeId::kUv);
+    odetail->colorCount = cls->attributeCount(Mesh::AttributeId::kColor);
 
     if (odetail->uvCount > 0) {
         odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;
@@ -141,7 +141,7 @@ void StaticMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTim
 
 // SkinMeshStructure
 void SkinMeshStructure::initialize(int maxslice) {
-    if (ownerNode->animatedFlag == 0) {
+    if (ownerNode->animatedFlag == Node::AnimatedFlags::kAnimatedNone) {
         invGlobalMatrix = Matrix4::inverted(ownerNode->initialTransform.globalMatrix, nullptr);
     }
     jointMatrices.resize(skin->jointNodes.size());
@@ -226,8 +226,8 @@ void SkinMeshStructure::intersectionDetail(const Ray& ray, PPFloat hitt, PPTimeT
     odetail->shadingTangent.y = tmptan.y;
     odetail->shadingTangent.z = tmptan.z;
 
-    odetail->uvCount = cls->attributeCount(Mesh::kUv);
-    odetail->colorCount = cls->attributeCount(Mesh::kColor);
+    odetail->uvCount = cls->attributeCount(Mesh::AttributeId::kUv);
+    odetail->colorCount = cls->attributeCount(Mesh::AttributeId::kColor);
 
     if (odetail->uvCount > 0) {
         odetail->texcoord0 = *attrA.uv0 * wa + *attrB.uv0 * wb + *attrC.uv0 * wc;

@@ -9,7 +9,7 @@ namespace PinkyPi {
     
     class KeyframeSampler {
     public:
-        enum InterpolationType {
+        enum class InterpolationType {
             kLinear,
             kStep,
             kCubicSpline
@@ -21,7 +21,8 @@ namespace PinkyPi {
         };
         
         KeyframeSampler()
-            : interpolation(kLinear)
+            : interpolation(InterpolationType::kLinear)
+            , sampleComponents(0)
         {}
         
 //        int nearestKeyframeIndex(PPTimeType time) const;

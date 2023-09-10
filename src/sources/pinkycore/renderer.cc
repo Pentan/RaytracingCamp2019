@@ -15,6 +15,7 @@
 #include "texture.h"
 #include "material.h"
 #include "mesh.h"
+#include "light.h"
 #include "bvh.h"
 #include "assetlibrary.h"
 
@@ -110,6 +111,7 @@ Renderer::Renderer(const Config& config, Scene* scn):
     limitSecMargin = config.limitMargin;
     progressIntervalSec = config.progressIntervalSec;
     
+    saveZeroWidth = config.outputZeroWidth;
     std::string saveDir = config.outputDir;
     if(saveDir.length() > 0) {
         if(saveDir[saveDir.length() - 1] != '/') {
@@ -166,7 +168,7 @@ void Renderer::renderOneFrame(FrameBuffer* fb, PostProcessor* pp, PPTimeType ope
 void Renderer::postProcessAndSave(FrameBuffer* fb, PostProcessor* pp, int frameid) {
     std::stringstream ss;
     ss << saveNameBase;
-    ss << std::setfill('0') << std::right << std::setw(4);
+    ss << std::setfill('0') << std::right << std::setw(saveZeroWidth);
     ss << frameid << "." << saveExt;
     auto savepath = ss.str();
     
@@ -193,9 +195,9 @@ void Renderer::render() {
     }
     renderContexts.resize(numMaxJobs);
     
-    if(numMaxJobs > 1) {
+    //if(numMaxJobs > 1) {
         setupWorkers();
-    }
+    //}
     
     for(int i = 0; i < renderFrames; i++) {
         double frameStartTime = TimeUtils::getTimeInSeconds();
@@ -309,16 +311,19 @@ void Renderer::pathtrace(const Ray& iray, const Scene* scn, Context* cntx, Rende
 
         // throughput
         auto hitthp = hitmaterial->evaluateThroughput(ray, &nextray, surfinfo, rng, &materiallog);
-        if(materiallog.bxdfType == Material::kEmission) {
+        if(materiallog.bxdfType == Material::BXDFType::kEmission) {
             break;
         }
 
 #ifdef USE_NEE
-        if(materiallog.bxdfType == Material::kDiffuse) {
+        if(materiallog.bxdfType == Material::BXDFType::kDiffuse) {
+            Ray shdwray;
+
             // sample bg
             auto smpl = Sampler::sampleCosineWeightedHemisphere(surfinfo.shadingNormal, rng);
             if (isValidIntersection(smpl.v, surfinfo)) {
-                Ray shdwray(surfinfo.position, smpl.v);
+                shdwray.origin = surfinfo.position;
+                shdwray.direction = smpl.v;
                 PPFloat shdwt = scene->intersection(shdwray, kRayOffset, kFarAway, cntx->exposureTimeRate, nullptr);
                 if (shdwt < 0.0) {
                     Material::EvalLog shadowlog;
@@ -330,14 +335,54 @@ void Renderer::pathtrace(const Ray& iray, const Scene* scn, Context* cntx, Rende
                 }
             }
 
+            Light::EvalLog lightlog;
             // sample light
-            if (!isHitDiffuse) {
+            if (!isHitDiffuse || depth < 1) 
+            {
                 // all light
                 for (auto lite = scene->lights.begin(); lite != scene->lights.end(); ++lite) {
-
+                    const auto litnode = *lite;
+                    const auto lit = litnode->content.light;
+                    Color litcol = lit->evaluate(litnode, surfinfo, cntx->exposureTimeRate, &lightlog);
+                    shdwray.origin = lightlog.position;
+                    shdwray.direction = lightlog.direction;
+                    PPFloat shdwt = scene->intersection(shdwray, kRayOffset, kFarAway, cntx->exposureTimeRate, nullptr);
+                    auto lpd = Vector3::distance(shdwray.origin, surfinfo.position);
+                    if (lpd - shdwt < kEPS)
+                    {
+                        Material::EvalLog shadowlog;
+                        shdwray.direction.negate();
+                        PPFloat fbxdf = hitmaterial->evaluateBXDF(ray, shdwray, materiallog.selectedBxdfId, surfinfo, &shadowlog);
+                        PPFloat lmb = std::abs(Vector3::dot(shdwray.direction, surfinfo.shadingNormal));
+                        Color col = Color::mul(materiallog.filterColor, litcol);
+                        radiance += Color::mul(throughput, col) * lmb * fbxdf / (shadowlog.bxdfPdf * lightlog.lightPdf);
+                    }
                 }
             } else {
                 // one light
+                PPFloat prevWeight = 0.0;
+                auto litWeight = rng.nextDoubleCO();
+                for (auto lite = scene->lights.begin(); lite != scene->lights.end(); ++lite) {
+                    const auto litnode = *lite;
+                    const auto lit = litnode->content.light;
+                    if (litWeight <= lit->sampleWeight) {
+                        Color litcol = lit->evaluate(litnode, surfinfo, cntx->exposureTimeRate, &lightlog);
+                        shdwray.origin = lightlog.position;
+                        shdwray.direction = lightlog.direction;
+                        PPFloat shdwt = scene->intersection(shdwray, kRayOffset, kFarAway, cntx->exposureTimeRate, nullptr);
+                        auto lpd = Vector3::distance(shdwray.origin, surfinfo.position);
+                        if (lpd - shdwt < kEPS)
+                        {
+                            Material::EvalLog shadowlog;
+                            shdwray.direction.negate();
+                            PPFloat fbxdf = hitmaterial->evaluateBXDF(ray, shdwray, materiallog.selectedBxdfId, surfinfo, &shadowlog);
+                            PPFloat lmb = std::abs(Vector3::dot(shdwray.direction, surfinfo.shadingNormal));
+                            Color col = Color::mul(materiallog.filterColor, litcol);
+                            radiance += Color::mul(throughput, col) * lmb * fbxdf / (shadowlog.bxdfPdf * lightlog.lightPdf / (lit->sampleWeight - prevWeight));
+                        }
+                    }
+                    prevWeight = lit->sampleWeight;
+                }
             }
         }
 #endif
@@ -348,7 +393,7 @@ void Renderer::pathtrace(const Ray& iray, const Scene* scn, Context* cntx, Rende
         }
 
         // first diffuse
-        if (!isHitDiffuse && materiallog.bxdfType == Material::kDiffuse) {
+        if (!isHitDiffuse && materiallog.bxdfType == Material::BXDFType::kDiffuse) {
             result->firstDiffuseAlbedo = materiallog.filterColor;
             result->firstDiffuseNormal = surfinfo.shadingNormal;
             isHitDiffuse = true;
@@ -365,9 +410,6 @@ void Renderer::pathtrace(const Ray& iray, const Scene* scn, Context* cntx, Rende
 
         // lambert
         PPFloat ndotd = Vector3::dot(nextray.direction, surfinfo.shadingNormal);
-        if(ndotd < 0.0) {
-            ndotd = 0.0;
-        }
         throughput = Vector3::mul(hitthp, throughput) * std::abs(ndotd) / materiallog.pdf;
         
         //+++++
@@ -569,13 +611,13 @@ void Renderer::wokerMain(int workerid) {
 
 void Renderer::processCommand(int workerid, JobCommand cmd) {
     switch (cmd.type) {
-        case kRender:
+        case CommandType::kRender:
             renderJob(workerid, cmd);
             break;
-        case kPostprocess:
+        case CommandType::kPostprocess:
             postprocessJob(workerid, cmd);
             break;
-        case kSaveFile:
+        case CommandType::kSaveFile:
             saveFileJob(workerid, cmd);
             break;
         default:
@@ -686,17 +728,17 @@ double Renderer::checkPrintProcessLog(double logedTime) {
     double curtime = TimeUtils::getElapsedTimeInSeconds();
     if (progressIntervalSec > 0.0 && curtime - logedTime > progressIntervalSec) {
         // print
-        static const char cmdtbl[CommandType::kNumCommandType] = {
+        static const char cmdtbl[static_cast<int>(CommandType::kNumCommandType)] = {
             'n', 'R', 'P', 'S'
         };
-        static const char stattbl[WorkerStatus::kNumWorkerStatus] = {
+        static const char stattbl[static_cast<int>(WorkerStatus::kNumWorkerStatus)] = {
             '$', '-', '#', '*'
         };
         std::stringstream ss;
         ss << "[" << numMaxJobs << "]:";
         for (auto ite = workerInfos.begin(); ite != workerInfos.end(); ++ite) {
             auto info = *ite;
-            ss << " " << stattbl[info.status] << cmdtbl[info.commandType];
+            ss << " " << stattbl[static_cast<int>(info.status)] << cmdtbl[static_cast<int>(info.commandType)];
             ss << ":" << info.infoValue0 << "," << info.infoValue1;
         }
         std::cout << ss.str() << std::endl;
@@ -722,9 +764,9 @@ void Renderer::processAllCommands() {
 }
 
 void Renderer::setupWorkers() {
-    if(numMaxJobs <= 1) return;
     processingWorkerCount = 0;
     workerInfos.resize(numMaxJobs);
+    if(numMaxJobs <= 1) return;
     stopWorkers = false;
     workerPool.reserve(numMaxJobs);
     for(int i = 0; i < numMaxJobs; i++) {

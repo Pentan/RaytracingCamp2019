@@ -19,9 +19,9 @@ ImageTexture::ImageTexture(int w, int h):
     height(h),
     hasAlpha(false),
     gamma(2.2),
-    sampleType(kLinear),
-    wrapX(kRepeat),
-    wrapY(kRepeat)
+    sampleType(SampleType::kLinear),
+    wrapX(WrapType::kRepeat),
+    wrapY(WrapType::kRepeat)
 {
     image = new TexcelSample[w * h];
 }
@@ -44,10 +44,10 @@ TexcelSample ImageTexture::sample(PPFloat x, PPFloat y, bool gammacorrect) const
     iy = wrapSampleY(iy);
     
     switch (sampleType) {
-        case kNearest:
+        case SampleType::kNearest:
             ret = image[ix + iy * width];
             break;
-        case kLinear:
+        case SampleType::kLinear:
         default:
         {
             int ix1 = wrapSampleX(ix + 1);
@@ -133,11 +133,11 @@ void ImageTexture::initWithFpImage(const float *src, int comps, double gamma) {
 
 int ImageTexture::wrapSampleX(int x) const {
     switch (wrapX) {
-        case kClamp:
+        case WrapType::kClamp:
             x = std::max(0, x);
             x = std::min(x, width - 1);
             break;
-        case kRepeat:
+        case WrapType::kRepeat:
         default:
             x = x % width;
             if(x < 0) x += width;
@@ -148,11 +148,11 @@ int ImageTexture::wrapSampleX(int x) const {
 
 int ImageTexture::wrapSampleY(int y) const {
     switch (wrapY) {
-        case kClamp:
+        case WrapType::kClamp:
             y = std::max(0, y);
             y = std::min(y, height - 1);
             break;
-        case kRepeat:
+        case WrapType::kRepeat:
         default:
             y = y % height;
             if(y < 0) y += height;

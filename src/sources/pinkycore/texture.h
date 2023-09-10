@@ -48,11 +48,11 @@ namespace PinkyPi {
     // Image texture
     class ImageTexture : public Texture {
     public:
-        enum SampleType {
+        enum class SampleType {
             kNearest,
             kLinear
         };
-        enum WrapType {
+        enum class WrapType {
             kClamp,
             kRepeat
         };

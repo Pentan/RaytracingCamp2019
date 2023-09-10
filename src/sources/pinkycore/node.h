@@ -16,14 +16,14 @@ namespace PinkyPi {
     
     class Node {
     public:
-        enum ContentType {
+        enum class ContentType {
             kContentTypeEmpty,
             kContentTypeCamera,
             kContentTypeMesh,
             kContentTypeLight
         };
 
-        enum AnimatedFlags {
+        enum class AnimatedFlags {
             kAnimatedNone   = 0,
             kAnimatedDirect = 1,
             kAnimatedInTree = 2
@@ -60,7 +60,7 @@ namespace PinkyPi {
             Light* light;
         } content;
         std::unique_ptr<TracableStructure> tracable;
-        int animatedFlag;
+        AnimatedFlags animatedFlag;
         
         Node* parent;
         bool isTransformDirty;

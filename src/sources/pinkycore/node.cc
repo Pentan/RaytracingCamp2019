@@ -15,8 +15,8 @@ using namespace PinkyPi;
 
 Node::Node(int i):
     index(i),
-    contentType(kContentTypeEmpty),
-    animatedFlag(0),
+    contentType(ContentType::kContentTypeEmpty),
+    animatedFlag(AnimatedFlags::kAnimatedNone),
     parent(nullptr),
     isTransformDirty(false)
 {
@@ -37,7 +37,7 @@ Node::~Node() {
 }
 
 Matrix4 Node::computeGlobalMatrix(PPTimeType tr) const {
-    if(animatedFlag == 0) {
+    if(animatedFlag == AnimatedFlags::kAnimatedNone) {
         return initialTransform.globalMatrix;
     } else {
         Matrix4 pgm;
@@ -47,13 +47,14 @@ Matrix4 Node::computeGlobalMatrix(PPTimeType tr) const {
             pgm = parent->computeGlobalMatrix(tr);
         }
         
-        if((animatedFlag & Node::kAnimatedDirect) == 0) {
+        if((static_cast<int>(animatedFlag) & static_cast<int>(AnimatedFlags::kAnimatedDirect)) == 0) {
             return pgm * initialTransform.matrix;
         } else {
             int lastindex = static_cast<int>(transformCache.size() - 1);
-            PPFloat ti = tr * static_cast<float>(lastindex);
-            PPFloat t = std::floor(ti);
-            int i0 = static_cast<int>(ti - t);
+            PPFloat t = tr * static_cast<float>(lastindex);
+            PPFloat ti = std::floor(t);
+            t = t - ti;
+            int i0 = static_cast<int>(ti);
             int i1 = std::min(i0 + 1, lastindex);
             Transform tf = Transform::interpolate(transformCache[i0], transformCache[i1], t);
             tf.makeMatrix();

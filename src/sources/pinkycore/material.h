@@ -28,7 +28,7 @@ namespace PinkyPi {
     //
     class Material {
     public:
-        enum AlphaMode {
+        enum class AlphaMode {
             kAlphaAsOpaque,
             kAlphaAsMask,
             kAlphaAsBlend
@@ -46,11 +46,19 @@ namespace PinkyPi {
             {}
         };
         
-        enum BXDFType {
+        enum class BXDFType {
             kDiffuse,
             kSpecular,
             kTransmit,
             kEmission
+        };
+
+        enum class BXDFId {
+            kLambert,
+            kSpecular,
+            kTransmit,
+            kGGX,
+            kEmit,
         };
         
         struct EvalLog {
@@ -59,7 +67,7 @@ namespace PinkyPi {
             PPFloat samplePdf;
             PPFloat bxdfValue;
             Color filterColor;
-            int selectedBxdfId;
+            BXDFId selectedBxdfId;
             BXDFType bxdfType;
         };
         
@@ -71,7 +79,7 @@ namespace PinkyPi {
         int assetId;
         
         Color evaluateThroughput(const Ray& iray, Ray* oray, const SurfaceInfo& surfinfo, Random& rng, EvalLog* log) const;
-        PPFloat evaluateBXDF(const Ray& iray, const Ray& oray, int bxdfId, const SurfaceInfo& surfinfo, EvalLog* log) const;
+        PPFloat evaluateBXDF(const Ray& iray, const Ray& oray, BXDFId bxdfId, const SurfaceInfo& surfinfo, EvalLog* log) const;
         
         Color evaluateEmissive(const Vector3* uv0) const;
         Color evaluateAlbedoColor(const Vector3* uv0) const;
@@ -96,8 +104,21 @@ namespace PinkyPi {
         PPFloat alphaCutoff;
         bool doubleSided;
         
-        // Extra
+        // Extensions
+        // KHR_materials_ior
         PPFloat ior;
+        // KHR_materials_transmission
+        PPFloat transmissionFactor;
+        TextureInfo transmissionTexture; // r channel
+        // KHR_materials_specular
+        PPFloat specularFactor;
+        TextureInfo specularTexture; // alpha channel
+        Color specularColorFactor;
+        TextureInfo specularColorTexture;
+        // KHR_materials_emissive_strength
+        PPFloat emissiveStrength;
+
+        // Extra
         // Clear coat factor
         // Shean factor
         // SSS factor

@@ -31,14 +31,16 @@ Mesh::Cluster::Cluster(int numverts, int numtris, const std::map<AttributeId, in
     memset(&attributeCounts, 0, sizeof(attributeCounts));
 
     for (auto kv : attrdesc) {
-        attributeCounts[kv.first] = kv.second;
-        attributeDataSize += attrSizeTbl[kv.second];
+        int attrtype = static_cast<int>(kv.first);
+        int attrcount = kv.second;
+        attributeCounts[attrtype] = attrcount;
+        attributeDataSize += attrSizeTbl[attrtype] * attrcount;
     }
 
     attributeBuffer.resize(numverts * attributeDataSize);
 
     attributeOffsets[0] = 0;
-    for (int i = 1; i < kNumAttrs; i++) {
+    for (int i = 1; i < static_cast<int>(AttributeId::kNumAttrs); i++) {
         int k = i - 1;
         attributeOffsets[i] = attributeOffsets[k] + attrSizeTbl[k] * attributeCounts[k];
     }
@@ -51,18 +53,18 @@ Attributes Mesh::Cluster::attributesAt(int i) {
     Attributes attrs;
     unsigned char* data = attributeBuffer.data() + attributeDataSize * i;
 
-    attrs.normal = reinterpret_cast<Vector3*>(data + attributeOffsets[kNormal]);
-    attrs.tangent = reinterpret_cast<Vector4*>(data + attributeOffsets[kTangent]);
-    attrs.uv0 = reinterpret_cast<Vector3*>(data + attributeOffsets[kUv]);
-    attrs.color0 = reinterpret_cast<Vector4*>(data + attributeOffsets[kColor]);
-    attrs.joints0 = reinterpret_cast<IntVec4*>(data + attributeOffsets[kJoints]);
-    attrs.weights0 = reinterpret_cast<Vector4*>(data + attributeOffsets[kNormal]);
+    attrs.normal = reinterpret_cast<Vector3*>(data + attributeOffsets[static_cast<int>(AttributeId::kNormal)]);
+    attrs.tangent = reinterpret_cast<Vector4*>(data + attributeOffsets[static_cast<int>(AttributeId::kTangent)]);
+    attrs.uv0 = reinterpret_cast<Vector3*>(data + attributeOffsets[static_cast<int>(AttributeId::kUv)]);
+    attrs.color0 = reinterpret_cast<Vector4*>(data + attributeOffsets[static_cast<int>(AttributeId::kColor)]);
+    attrs.joints0 = reinterpret_cast<IntVec4*>(data + attributeOffsets[static_cast<int>(AttributeId::kJoints)]);
+    attrs.weights0 = reinterpret_cast<Vector4*>(data + attributeOffsets[static_cast<int>(AttributeId::kWeights)]);
 
     return attrs;
 }
 
 int Mesh::Cluster::attributeCount(AttributeId i) const {
-    return static_cast<int>(attributeCounts[i]);
+    return static_cast<int>(attributeCounts[static_cast<int>(i)]);
 }
 
 

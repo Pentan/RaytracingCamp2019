@@ -24,14 +24,14 @@ void Camera::initWithType(CameraType t)
     type = t;
     switch (type) {
         default:
-        case kPerspectiveCamera:
+        case CameraType::kPerspectiveCamera:
             perspective.aspect = 1.0;
             perspective.yfov = 1.0;
             perspective.znear = 0.0;
             perspective.zfar = 1e8;
             getRayFunc = (fNumber > 0.0) ? getThinLensRay : getPerspectiveRay;
             break;
-        case kOrthographicsCamera:
+        case CameraType::kOrthographicsCamera:
             orthographics.xmag = 1.0;
             orthographics.ymag = 1.0;
             orthographics.znear = 0.0;
